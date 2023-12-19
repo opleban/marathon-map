@@ -32,6 +32,68 @@ const fetchGeoJsonData = async (url) => {
 		)
 }
 
+const addRouteWithModel = (_map, _data, _sourceName, _prettyName, _model) => {
+	const addButton = (btnText, btnId) => {
+		const newButton = document.createElement('button');
+		newButton.textContent = btnText;
+		newButton.id = btnId;
+
+		newButton.addEventListener("click", _evt => {
+			interruptAnimation();
+			showFullRoute(_map, _data).then(() => {
+				enableAnimation();
+			});
+			// 
+		});
+
+		document.body.appendChild(newButton);
+	}
+
+	const addPlayMarker = (markerCoord, markerName) => {
+
+		const _marker = new mapboxgl.Marker({
+			color: "#FFFFFF"
+		})
+		.setLngLat(markerCoord)
+		.addTo(_map);
+
+		// Add click handler
+		_marker.getElement().addEventListener('click', () => {
+			playAnimationsWithModel(_map, _data, _model);
+		});
+	}
+
+	const addGeoJsonSourceStyleToMap = () => {
+		_map.addSource(_sourceName, {
+			'type': 'geojson',
+			'data': _data
+		});
+
+		_map.addLayer({
+			'id': _sourceName,
+			'type': 'line',
+	// This property allows you to identify which `slot` in
+	// the Mapbox Standard your new layer should be placed in (`bottom`, `middle`, `top`).
+			'slot': 'middle',
+			'source': _sourceName,
+			'layout': {},
+			'paint': {
+				'line-color': '#f08',
+				'line-width': 3
+			}
+		});
+
+		return _map;
+	} 
+
+	addGeoJsonSourceStyleToMap();
+	addButton(_prettyName, _sourceName);
+
+	// Add marker at start of route;
+	const startingCoords = getStartingCoordinates(_data);
+	addPlayMarker(startingCoords, _sourceName);
+}
+
 const addRoute = (_map, _data, _sourceName, _prettyName, _defaultModelRotationValues=[0,0,0]) => {
 	const addButton = (btnText, btnId) => {
 		const newButton = document.createElement('button');
@@ -249,6 +311,103 @@ const generateUpdatedElephantData = (coords) => {
 	};
 }
 
+const animatePathWithModel = async ({ _map, duration, path, startBearing, startAltitude, pitch, _model }) => {
+	return new Promise(async (resolve) => {
+
+
+		const pathDistance = turf.lineDistance(path);
+		let startTime;
+
+		const frame = async (currentTime) => {
+			if (!startTime) startTime = currentTime;
+			const animationPhase = (currentTime - startTime) / duration;
+
+			let _altitudeValue = altitudeValue ? altitudeValue : startAltitude;
+			let _pitchValue = pitchValue ? pitchValue: pitch;
+
+
+      // when the duration is complete, resolve the promise and stop iterating
+			if (animationPhase > 1 || getAnimationEnabledState()) {
+				resolve();
+				return;
+			}
+      // calculate the distance along the path based on the animationPhase
+			const alongPath = turf.along(path, pathDistance * animationPhase).geometry
+			.coordinates;
+
+			const upcomingPath = turf.along(path, pathDistance * animationPhase + BEARING_PARAMETER).geometry
+			.coordinates;
+
+			const lngLat = {
+				lng: alongPath[0],
+				lat: alongPath[1]
+			};
+
+			// const upcomingLngLat = {
+			// 	lng: upcomingPath[0],
+			// 	lat: upcomingPath[1]
+			// };
+
+      // Reduce the visible length of the line by using a line-gradient to cutoff the line
+      // animationPhase is a value between 0 and 1 that reprents the progress of the animation
+			// _map.setPaintProperty(
+			// 	"line-layer",
+			// 	"line-gradient",
+			// 	[
+			// 		"step",
+			// 		["line-progress"],
+			// 		"yellow",
+			// 		animationPhase,
+			// 		"rgba(0, 0, 0, 0)",
+			// 		]
+			// 	);
+
+			_model.setTranslate(alongPath);
+
+      // slowly rotate the map at a constant rate
+			// const bearing = startBearing - animationPhase * 200.0;
+			const bearing = turf.bearing(alongPath, upcomingPath);
+
+      // compute corrected camera ground position, so that he leading edge of the path is in view
+			var correctedPosition = computeCameraPosition(
+				_pitchValue,
+				bearing,
+				lngLat,
+				_altitudeValue,
+        		true // smooth
+        		);
+
+      // set the pitch and bearing of the camera
+			const camera = _map.getFreeCameraOptions();
+			camera.setPitchBearing(_pitchValue, bearing);
+
+			let phaseOffset = animationPhase - 0.001 < 0 ? 0 : animationPhase - 0.001;
+
+			const beforePath = turf.along(path, pathDistance * phaseOffset).geometry.coordinates;
+
+			const pathBearing = turf.bearing(alongPath, beforePath);
+
+			const azimuthAngle = turf.bearingToAzimuth(pathBearing);
+
+			map.setPaintProperty("modellayer", "model-rotation", [_defaultModelRotationValues[0], _defaultModelRotationValues[1], azimuthAngle + 90])
+
+      // set the position and altitude of the camera
+			camera.position = mapboxgl.MercatorCoordinate.fromLngLat(
+				correctedPosition,
+				_altitudeValue
+				);
+
+      // apply the new camera options
+			_map.setFreeCameraOptions(camera);
+
+      // repeat!
+			await window.requestAnimationFrame(frame);
+		};
+
+		await window.requestAnimationFrame(frame);
+	});
+}
+
 const animatePath = async ({ _map, duration, path, startBearing, startAltitude, pitch, _defaultModelRotationValues }) => {
 	return new Promise(async (resolve) => {
 
@@ -329,7 +488,9 @@ const animatePath = async ({ _map, duration, path, startBearing, startAltitude, 
 
 			const azimuthAngle = turf.bearingToAzimuth(pathBearing);
 
-			map.setPaintProperty("modellayer", "model-rotation", [_defaultModelRotationValues[0], _defaultModelRotationValues[1], azimuthAngle + 90])
+			// setRotation()
+
+			// map.setPaintProperty("modellayer", "model-rotation", [_defaultModelRotationValues[0], _defaultModelRotationValues[1], azimuthAngle + 90])
 
       // set the position and altitude of the camera
 			camera.position = mapboxgl.MercatorCoordinate.fromLngLat(
@@ -426,6 +587,62 @@ const flyInAndRotate = async ({
 	});
 };
 
+const playAnimationsWithModel = async (_map, trackGeojson, _model) => {
+	return new Promise(async (resolve) => {
+    // // add a geojson source and layer for the linestring to the map
+	// 	addPathSourceAndLayer(trackGeojson);
+
+    // get the start of the linestring, to be used for animating a zoom-in from high altitude
+		var targetLngLat = {
+			lng: trackGeojson.features[0].geometry.coordinates[0][0],
+			lat: trackGeojson.features[0].geometry.coordinates[0][1],
+		};
+
+	// Get initial bearing based marathon route
+		const initialPathPoint = turf.along(trackGeojson.features[0], 0).geometry.coordinates;
+		const alongPathPoint = turf.along(trackGeojson.features[0], BEARING_PARAMETER).geometry.coordinates;
+
+		const initialPathBearing = turf.bearing(initialPathPoint, alongPathPoint);
+
+    // animate zooming in to the start point, get the final bearing and altitude for use in the next animation
+		const { bearing, altitude } = await flyInAndRotate({
+			_map,
+			targetLngLat,
+			duration: 4000,
+			startAltitude: _map.getFreeCameraOptions()._position.toAltitude(),
+			endAltitude: 200,
+			startBearing: 0,
+			endBearing: initialPathBearing,
+			startPitch: 40,
+			endPitch: 55
+		});
+
+    // follow the path while slowly rotating the camera, passing in the camera bearing and altitude from the previous animation
+		await animatePathWithModel({
+			_map,
+			duration: 300000,
+			path: trackGeojson.features[0],
+			startBearing: initialPathBearing,
+			startAltitude: altitude,
+			pitch: 55,
+			_model
+		});
+
+    // // get the bounds of the linestring, use fitBounds() to animate to a final view
+	// 	const bounds = turf.bbox(trackGeojson);
+	// 	_map.fitBounds(bounds, {
+	// 		duration: 3000,
+	// 		pitch: 30,
+	// 		bearing: 0,
+	// 		padding: 120,
+	// 	});
+
+		setTimeout(() => {
+			resolve()
+		}, 10000)
+	})
+};
+
 const playAnimations = async (_map, trackGeojson, _defaultModelRotationValues) => {
 	return new Promise(async (resolve) => {
     // // add a geojson source and layer for the linestring to the map
@@ -494,35 +711,6 @@ const map = new mapboxgl.Map({
 
 map.addControl(new HelloWorldControl());
 
-const addRunnerModel = (_map, initialLocation) => {
-	map.addSource('mysource', {
-		type: 'geojson',
-		data: generateUpdatedElephantData(initialLocation)
-	});
-
-    // I see that a network request is made to this URL.
-	map.addModel('model', '/models/runner.glb');
-
-
-    // No models show up on the map. No errors are thrown. What's missing?
-    const defaultModelRotationValues = [0,0,0];
-
-	map.addLayer({
-		'id': 'modellayer',
-		'type': 'model',
-		'source': 'mysource',
-		'layout': {
-			'model-id': 'model'
-		},
-		'paint': {
-			'model-scale': [15,15,15],
-			'model-type': 'location-indicator',
-			'model-rotation': defaultModelRotationValues
-		}
-	});
-	return defaultModelRotationValues;
-}
-
 const addSantaSleighModel = (_map, initialLocation) => {
 	map.addSource('mysource', {
 		type: 'geojson',
@@ -563,7 +751,7 @@ const addDuckModel = (_map, initialLocation) => {
 
 
     // No models show up on the map. No errors are thrown. What's missing?
-    const defaultModelRotationValues = [0,0,0];
+	const defaultModelRotationValues = [0,0,0];
 	map.addLayer({
 		'id': 'modellayer',
 		'type': 'model',
@@ -613,13 +801,11 @@ const addElkModel = (_map, initialLocation) => {
 
 const add3DModel = (_map, initialLocation) => {
 	// const defaultModelRotationValues = addDuckModel(_map, initialLocation);
-	// const defaultModelRotationValues = addSantaSleighModel(_map, initialLocation);
-	const defaultModelRotationValues = addRunnerModel(_map, initialLocation);
+	const defaultModelRotationValues = addSantaSleighModel(_map, initialLocation);
 	// const defaultModelRotationValues = addElkModel(_map, initialLocation);
 
 	return defaultModelRotationValues;
 
-    // map.getLayer('modellayer').scope = '';
 }
 
 const getInitialBearing = (_data) => {
@@ -629,6 +815,22 @@ const getInitialBearing = (_data) => {
 	const pathBearing = turf.bearing(initialPathPoint, alongPathPoint);
 	return pathBearing;
 	
+}
+
+window.tb = new Threebox(
+	map,
+	map.getCanvas().getContext('webgl'),
+	{
+		defaultLights: true,
+	}
+);
+
+// import Stats from 'https://threejs.org/examples/jsm/libs/stats.module.js';
+let stats;
+
+function animate() {
+	requestAnimationFrame(animate);
+	stats.update();
 }
 
 map.on('style.load', async () => {
@@ -644,7 +846,39 @@ map.on('style.load', async () => {
 	let parisData = await fetchGeoJsonData('http://localhost:8000/routes_geojson/ParisOlympicsMarathon.geojson')
 	let lasVegassData = await fetchGeoJsonData('http://localhost:8000/routes_geojson/LasVegasMarathon.geojson')
 
-	const defaultModelRotationValues = add3DModel(map, nycData.features[0].geometry.coordinates[0]);
+	// const defaultModelRotationValues = add3DModel(map, nycData.features[0].geometry.coordinates[0]);
+	stats = new Stats();
+	map.getContainer().appendChild(stats.dom);
+	animate();
+
+	let model;
+
+	map.addLayer({
+		id: 'custom-threebox-model',
+		type: 'custom',
+		renderingMode: '3d',
+		onAdd: function (map, mbxContext) {
+			const scale = 10;
+			const options = {
+				obj: './models/runner.glb',
+				type: 'gltf',
+				scale: { x: scale, y: scale, z: scale },
+				units: 'meters',
+				rotation: { x: 90, y: -90, z: 0 }
+			};
+
+			tb.loadObj(options, (_model) => {
+				let model = _model;
+				model.setCoords(nycData.features[0].geometry.coordinates[0]);
+				model.setRotation({ x: 0, y: 0, z: 241 });
+				tb.add(model);
+			});
+		},
+
+		render: function (gl, matrix) {
+			tb.update();
+		}
+	});
 
 	// map.addSource('mapbox-dem', {
 	// 	'type': 'raster-dem',
@@ -658,17 +892,26 @@ map.on('style.load', async () => {
 	const initialBearing = getInitialBearing(nycData);
 	const azimuthAngle = turf.bearingToAzimuth(initialBearing);
 
-	map.setPaintProperty("modellayer", "model-rotation", [defaultModelRotationValues[0], defaultModelRotationValues[1], azimuthAngle - 90])
+	// map.setPaintProperty("modellayer", "model-rotation", [defaultModelRotationValues[0], defaultModelRotationValues[1], azimuthAngle - 90])
 	map.setFog({ 'range': [0,20]})
 
-	addRoute(map, londonData, 'london-marathon','TCS London Marathon', defaultModelRotationValues);
-	addRoute(map, bostonData, 'boston-marathon', 'Boston Marathon', defaultModelRotationValues);
-	addRoute(map, chicagoData, 'chicago-marathon', 'Chicago Marathon', defaultModelRotationValues);
-	addRoute(map, tokyoData, 'tokyo-marathon', 'Tokyo Marathon', defaultModelRotationValues);
-	addRoute(map, berlinData, 'berlin-marathon', 'BMW Berlin Marathon', defaultModelRotationValues);
-	addRoute(map, nycData, 'nyc-marathon', 'TCS NYC Marathon', defaultModelRotationValues);
-	addRoute(map, parisData, 'paris-marathon', 'Paris Olympics Marathon', defaultModelRotationValues);
-	addRoute(map, lasVegassData, 'las-vegas-marathon', 'Las Vegas Rock n Roll Marathon', defaultModelRotationValues);
+	addRouteWithModel(map, londonData, 'london-marathon','TCS London Marathon', model);
+	addRouteWithModel(map, bostonData, 'boston-marathon', 'Boston Marathon', model);
+	addRouteWithModel(map, chicagoData, 'chicago-marathon', 'Chicago Marathon', model);
+	addRouteWithModel(map, tokyoData, 'tokyo-marathon', 'Tokyo Marathon', model);
+	addRouteWithModel(map, berlinData, 'berlin-marathon', 'BMW Berlin Marathon', model);
+	addRouteWithModel(map, nycData, 'nyc-marathon', 'TCS NYC Marathon', model);
+	addRouteWithModel(map, parisData, 'paris-marathon', 'Paris Olympics Marathon', model);
+	addRouteWithModel(map, lasVegassData, 'las-vegas-marathon', 'Las Vegas Rock n Roll Marathon', model);
+
+	// addRoute(map, londonData, 'london-marathon','TCS London Marathon', defaultModelRotationValues);
+	// addRoute(map, bostonData, 'boston-marathon', 'Boston Marathon', defaultModelRotationValues);
+	// addRoute(map, chicagoData, 'chicago-marathon', 'Chicago Marathon', defaultModelRotationValues);
+	// addRoute(map, tokyoData, 'tokyo-marathon', 'Tokyo Marathon', defaultModelRotationValues);
+	// addRoute(map, berlinData, 'berlin-marathon', 'BMW Berlin Marathon', defaultModelRotationValues);
+	// addRoute(map, nycData, 'nyc-marathon', 'TCS NYC Marathon', defaultModelRotationValues);
+	// addRoute(map, parisData, 'paris-marathon', 'Paris Olympics Marathon', defaultModelRotationValues);
+	// addRoute(map, lasVegassData, 'las-vegas-marathon', 'Las Vegas Rock n Roll Marathon', defaultModelRotationValues);
 
 	map.on('click', (evt) => {
 		console.log("Position: ", evt.lngLat);
@@ -679,7 +922,6 @@ map.on('style.load', async () => {
 
 
 // followRouteWithCamera(nycData.features[0].geometry.coordinates);
-
 
 });
 
