@@ -853,15 +853,15 @@ let bringSnow = {}
 map.on('3dmodeladded', async (e) => {
 	console.log(e);
 
-	let londonData = await fetchGeoJsonData('http://localhost:8000/routes_geojson/LondonMarathon.geojson')
-	let bostonData = await fetchGeoJsonData('http://localhost:8000/routes_geojson/BostonMarathon.geojson')
-	let chicagoData = await fetchGeoJsonData('http://localhost:8000/routes_geojson/ChicagoMarathon.geojson')
-	let tokyoData = await fetchGeoJsonData('http://localhost:8000/routes_geojson/TokyoMarathon.geojson')
-	let berlinData = await fetchGeoJsonData('http://localhost:8000/routes_geojson/BerlinMarathon.geojson')
-	let nycData = await fetchGeoJsonData('http://localhost:8000/routes_geojson/NYCMarathon.geojson')
-	let parisData = await fetchGeoJsonData('http://localhost:8000/routes_geojson/ParisOlympicsMarathon.geojson')
-	let lasVegasData = await fetchGeoJsonData('http://localhost:8000/routes_geojson/LasVegasMarathon.geojson')
-	let miamiMarathonData = await fetchGeoJsonData('http://localhost:8000/routes_geojson/MiamiMarathon.geojson')
+	let londonData = await fetchGeoJsonData('./routes_geojson/LondonMarathon.geojson')
+	let bostonData = await fetchGeoJsonData('./routes_geojson/BostonMarathon.geojson')
+	let chicagoData = await fetchGeoJsonData('./routes_geojson/ChicagoMarathon.geojson')
+	let tokyoData = await fetchGeoJsonData('./routes_geojson/TokyoMarathon.geojson')
+	let berlinData = await fetchGeoJsonData('./routes_geojson/BerlinMarathon.geojson')
+	let nycData = await fetchGeoJsonData('./routes_geojson/NYCMarathon.geojson')
+	let parisData = await fetchGeoJsonData('./routes_geojson/ParisOlympicsMarathon.geojson')
+	let lasVegasData = await fetchGeoJsonData('./routes_geojson/LasVegasMarathon.geojson')
+	let miamiMarathonData = await fetchGeoJsonData('./routes_geojson/MiamiMarathon.geojson')
 
 	bringSnow.ToNewYork = () => makeItSnow(map, nycData, 'nyc-marathon')
 	bringSnow.ToBerlin = () => makeItSnow(map, berlinData, 'berlin-marathon')
