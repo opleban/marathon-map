@@ -8,6 +8,7 @@ const BEARING_PARAMETER = 1.5;
 let animationStopped = false;
 let altitudeValue;
 let pitchValue;
+let model;
 
 const interruptAnimation = () => {
 	animationStopped = true
@@ -42,6 +43,7 @@ const addRouteWithModel = (_map, _data, _sourceName, _prettyName, _model) => {
 			interruptAnimation();
 			showFullRoute(_map, _data).then(() => {
 				enableAnimation();
+				_model.setCoordsWithZOffset(_data.features[0].geometry.coordinates[0])
 			});
 			// 
 		});
@@ -59,13 +61,14 @@ const addRouteWithModel = (_map, _data, _sourceName, _prettyName, _model) => {
 
 		// Add click handler
 		_marker.getElement().addEventListener('click', () => {
-			playAnimationsWithModel(_map, _data, _model);
+			playAnimationsWithModel(_map, _data, _sourceName, _model);
 		});
 	}
 
 	const addGeoJsonSourceStyleToMap = () => {
 		_map.addSource(_sourceName, {
 			'type': 'geojson',
+			lineMetrics: true,
 			'data': _data
 		});
 
@@ -76,72 +79,14 @@ const addRouteWithModel = (_map, _data, _sourceName, _prettyName, _model) => {
 	// the Mapbox Standard your new layer should be placed in (`bottom`, `middle`, `top`).
 			'slot': 'middle',
 			'source': _sourceName,
-			'layout': {},
 			'paint': {
-				'line-color': '#f08',
-				'line-width': 3
-			}
-		});
-
-		return _map;
-	} 
-
-	addGeoJsonSourceStyleToMap();
-	addButton(_prettyName, _sourceName);
-
-	// Add marker at start of route;
-	const startingCoords = getStartingCoordinates(_data);
-	addPlayMarker(startingCoords, _sourceName);
-}
-
-const addRoute = (_map, _data, _sourceName, _prettyName, _defaultModelRotationValues=[0,0,0]) => {
-	const addButton = (btnText, btnId) => {
-		const newButton = document.createElement('button');
-		newButton.textContent = btnText;
-		newButton.id = btnId;
-
-		newButton.addEventListener("click", _evt => {
-			interruptAnimation();
-			showFullRoute(_map, _data).then(() => {
-				enableAnimation();
-			});
-			// 
-		});
-
-		document.body.appendChild(newButton);
-	}
-
-	const addPlayMarker = (markerCoord, markerName) => {
-
-		const _marker = new mapboxgl.Marker({
-			color: "#FFFFFF"
-		})
-		.setLngLat(markerCoord)
-		.addTo(_map);
-
-		// Add click handler
-		_marker.getElement().addEventListener('click', () => {
-			playAnimations(_map, _data, _defaultModelRotationValues);
-		});
-	}
-
-	const addGeoJsonSourceStyleToMap = () => {
-		_map.addSource(_sourceName, {
-			'type': 'geojson',
-			'data': _data
-		});
-
-		_map.addLayer({
-			'id': _sourceName,
-			'type': 'line',
-	// This property allows you to identify which `slot` in
-	// the Mapbox Standard your new layer should be placed in (`bottom`, `middle`, `top`).
-			'slot': 'middle',
-			'source': _sourceName,
-			'layout': {},
-			'paint': {
-				'line-color': '#f08',
-				'line-width': 3
+			  "line-color": "rgba(60, 179, 113, 1)",
+			  "line-width": 6,
+			  "line-opacity": 1
+			},
+			'layout': {
+			  "line-cap": "round",
+			  "line-join": "round"
 			}
 		});
 
@@ -294,24 +239,24 @@ const computeCameraPosition = ( pitch, bearing, targetPosition, altitude, smooth
     return newCameraPosition
 }
 
-const generateUpdatedElephantData = (coords) => {
-	return {
-		'type': 'FeatureCollection',
-		'features': [
-		{
-			'type': 'Feature',
-			'id': 'fc842f12-071f-5537-a665-bace79d0d5b3',
-			'geometry': {
-				'coordinates': coords,
-				'type': 'Point'
-			},
-			'properties': {}
-		}
-		]
-	};
-}
+// const generateUpdatedElephantData = (coords) => {
+// 	return {
+// 		'type': 'FeatureCollection',
+// 		'features': [
+// 		{
+// 			'type': 'Feature',
+// 			'id': 'fc842f12-071f-5537-a665-bace79d0d5b3',
+// 			'geometry': {
+// 				'coordinates': coords,
+// 				'type': 'Point'
+// 			},
+// 			'properties': {}
+// 		}
+// 		]
+// 	};
+// }
 
-const animatePathWithModel = async ({ _map, duration, path, startBearing, startAltitude, pitch, _model }) => {
+const animatePathWithModel = async ({ _map, trackId, duration, path, startBearing, startAltitude, pitch, _model }) => {
 	return new Promise(async (resolve) => {
 
 
@@ -343,29 +288,18 @@ const animatePathWithModel = async ({ _map, duration, path, startBearing, startA
 				lat: alongPath[1]
 			};
 
-			// const upcomingLngLat = {
-			// 	lng: upcomingPath[0],
-			// 	lat: upcomingPath[1]
-			// };
+			_map.setPaintProperty(
+				trackId,
+				"line-gradient",
+				[
+					"step",
+					["line-progress"],
+					"red",
+					animationPhase,
+					"rgba(60, 179, 113, 1)",
+				]
+			);
 
-      // Reduce the visible length of the line by using a line-gradient to cutoff the line
-      // animationPhase is a value between 0 and 1 that reprents the progress of the animation
-			// _map.setPaintProperty(
-			// 	"line-layer",
-			// 	"line-gradient",
-			// 	[
-			// 		"step",
-			// 		["line-progress"],
-			// 		"yellow",
-			// 		animationPhase,
-			// 		"rgba(0, 0, 0, 0)",
-			// 		]
-			// 	);
-
-			_model.setTranslate(alongPath);
-
-      // slowly rotate the map at a constant rate
-			// const bearing = startBearing - animationPhase * 200.0;
 			const bearing = turf.bearing(alongPath, upcomingPath);
 
       // compute corrected camera ground position, so that he leading edge of the path is in view
@@ -385,112 +319,15 @@ const animatePathWithModel = async ({ _map, duration, path, startBearing, startA
 
 			const beforePath = turf.along(path, pathDistance * phaseOffset).geometry.coordinates;
 
-			const pathBearing = turf.bearing(alongPath, beforePath);
+			const pathBearing = turf.bearing(beforePath, alongPath);
 
 			const azimuthAngle = turf.bearingToAzimuth(pathBearing);
 
-			map.setPaintProperty("modellayer", "model-rotation", [_defaultModelRotationValues[0], _defaultModelRotationValues[1], azimuthAngle + 90])
-
-      // set the position and altitude of the camera
-			camera.position = mapboxgl.MercatorCoordinate.fromLngLat(
-				correctedPosition,
-				_altitudeValue
-				);
-
-      // apply the new camera options
-			_map.setFreeCameraOptions(camera);
-
-      // repeat!
-			await window.requestAnimationFrame(frame);
-		};
-
-		await window.requestAnimationFrame(frame);
-	});
-}
-
-const animatePath = async ({ _map, duration, path, startBearing, startAltitude, pitch, _defaultModelRotationValues }) => {
-	return new Promise(async (resolve) => {
-
-
-		const pathDistance = turf.lineDistance(path);
-		let startTime;
-
-		const frame = async (currentTime) => {
-			if (!startTime) startTime = currentTime;
-			const animationPhase = (currentTime - startTime) / duration;
-
-			let _altitudeValue = altitudeValue ? altitudeValue : startAltitude;
-			let _pitchValue = pitchValue ? pitchValue: pitch;
-
-
-      // when the duration is complete, resolve the promise and stop iterating
-			if (animationPhase > 1 || getAnimationEnabledState()) {
-				resolve();
-				return;
+			if (_model.animated) {
+				_model.model.playDefault({duration: 1000, speed: _model.animationSpeed});
 			}
-      // calculate the distance along the path based on the animationPhase
-			const alongPath = turf.along(path, pathDistance * animationPhase).geometry
-			.coordinates;
 
-			const upcomingPath = turf.along(path, pathDistance * animationPhase + BEARING_PARAMETER).geometry
-			.coordinates;
-
-			const lngLat = {
-				lng: alongPath[0],
-				lat: alongPath[1]
-			};
-
-			// const upcomingLngLat = {
-			// 	lng: upcomingPath[0],
-			// 	lat: upcomingPath[1]
-			// };
-
-      // Reduce the visible length of the line by using a line-gradient to cutoff the line
-      // animationPhase is a value between 0 and 1 that reprents the progress of the animation
-			// _map.setPaintProperty(
-			// 	"line-layer",
-			// 	"line-gradient",
-			// 	[
-			// 		"step",
-			// 		["line-progress"],
-			// 		"yellow",
-			// 		animationPhase,
-			// 		"rgba(0, 0, 0, 0)",
-			// 		]
-			// 	);
-
-			const updatedElephant = generateUpdatedElephantData(alongPath);
-
-			map.getSource('mysource').setData(updatedElephant);
-
-      // slowly rotate the map at a constant rate
-			// const bearing = startBearing - animationPhase * 200.0;
-			const bearing = turf.bearing(alongPath, upcomingPath);
-
-      // compute corrected camera ground position, so that he leading edge of the path is in view
-			var correctedPosition = computeCameraPosition(
-				_pitchValue,
-				bearing,
-				lngLat,
-				_altitudeValue,
-        		true // smooth
-        		);
-
-      // set the pitch and bearing of the camera
-			const camera = _map.getFreeCameraOptions();
-			camera.setPitchBearing(_pitchValue, bearing);
-
-			let phaseOffset = animationPhase - 0.001 < 0 ? 0 : animationPhase - 0.001;
-
-			const beforePath = turf.along(path, pathDistance * phaseOffset).geometry.coordinates;
-
-			const pathBearing = turf.bearing(alongPath, beforePath);
-
-			const azimuthAngle = turf.bearingToAzimuth(pathBearing);
-
-			// setRotation()
-
-			// map.setPaintProperty("modellayer", "model-rotation", [_defaultModelRotationValues[0], _defaultModelRotationValues[1], azimuthAngle + 90])
+			_model.setWithZOffset({coords: alongPath, rotation: 90-azimuthAngle, duration: 50})
 
       // set the position and altitude of the camera
 			camera.position = mapboxgl.MercatorCoordinate.fromLngLat(
@@ -564,7 +401,7 @@ const flyInAndRotate = async ({
 			camera.position = mapboxgl.MercatorCoordinate.fromLngLat(
 				correctedPosition,
 				currentAltitude
-				);
+			);
 
       // apply the new camera options
 			_map.setFreeCameraOptions(camera);
@@ -587,7 +424,7 @@ const flyInAndRotate = async ({
 	});
 };
 
-const playAnimationsWithModel = async (_map, trackGeojson, _model) => {
+const playAnimationsWithModel = async (_map, trackGeojson, trackId, _model) => {
 	return new Promise(async (resolve) => {
     // // add a geojson source and layer for the linestring to the map
 	// 	addPathSourceAndLayer(trackGeojson);
@@ -618,8 +455,10 @@ const playAnimationsWithModel = async (_map, trackGeojson, _model) => {
 		});
 
     // follow the path while slowly rotating the camera, passing in the camera bearing and altitude from the previous animation
+		// _model.playAnimation({animation:0,duration:300000});
 		await animatePathWithModel({
 			_map,
+			trackId,
 			duration: 300000,
 			path: trackGeojson.features[0],
 			startBearing: initialPathBearing,
@@ -684,15 +523,6 @@ const playAnimations = async (_map, trackGeojson, _defaultModelRotationValues) =
 			_defaultModelRotationValues
 		});
 
-    // // get the bounds of the linestring, use fitBounds() to animate to a final view
-	// 	const bounds = turf.bbox(trackGeojson);
-	// 	_map.fitBounds(bounds, {
-	// 		duration: 3000,
-	// 		pitch: 30,
-	// 		bearing: 0,
-	// 		padding: 120,
-	// 	});
-
 		setTimeout(() => {
 			resolve()
 		}, 10000)
@@ -708,6 +538,8 @@ const map = new mapboxgl.Map({
 	pitch: 50,
 	bearing: 0.4
 });
+
+window.tb = new Threebox(map, map.getCanvas().getContext('webgl'), { defaultLights: true });
 
 map.addControl(new HelloWorldControl());
 
@@ -770,32 +602,85 @@ const addDuckModel = (_map, initialLocation) => {
 
 }
 
-const addElkModel = (_map, initialLocation) => {
-	map.addSource('mysource', {
-		type: 'geojson',
-		data: generateUpdatedElephantData(initialLocation)
-	});
-
-	    // I see that a network request is made to this URL.
-	map.addModel('model', '/models/elk_wip.glb');
-
-	const defaultModelRotationValues = [270, 100, 0];
+const addCustom3DModelLayer = (_map, modelPath, initialRotation, scale) => {
 	map.addLayer({
-		'id': 'modellayer',
-		'type': 'model',
-		'source': 'mysource',
-		'layout': {
-			'model-id': 'model'
+		id: 'custom-threebox-model',
+		type: 'custom',
+		renderingMode: '3d',
+		onAdd: function (map, mbxContext) {
+			const options = {
+				obj: modelPath,
+				type: 'gltf',
+				scale: { x: scale, y: scale, z: scale },
+				units: 'meters',
+				rotation: initialRotation,
+				anchor: 'center'
+			};
+
+			tb.loadObj(options, (_model) => {
+				model = _model;
+				tb.add(model);
+			});
+
+			_map.fire('3dmodeladded');
 		},
-		'paint': {
-			'model-scale': [15, 15, 15],
-			'model-type': 'location-indicator',
-			'model-rotation': defaultModelRotationValues
+
+		render: function (gl, matrix) {
+			tb.update();
 		}
 	});
+}
 
 
-	return defaultModelRotationValues;
+class ThreeBoxModel {
+	constructor({modelPath, animated, initialRotation, scale, zOffset, animationSpeed}) {
+		this.modelPath = modelPath;
+		this.animated = animated;
+		this.initialRotation = initialRotation;
+		this.scale = scale;
+		this.zOffset = zOffset;
+		this.animationSpeed = animationSpeed;
+	}
+
+	addModelLayerToMap(_map) {
+		_map.addLayer({
+			id: 'custom-threebox-model',
+			type: 'custom',
+			renderingMode: '3d',
+			onAdd: (_map, mbxContext) => {
+				console.log(this);
+				const options = {
+					obj: this.modelPath,
+					type: 'gltf',
+					scale: { x: this.scale, y: this.scale, z: this.scale },
+					units: 'meters',
+					rotation: this.initialRotation,
+					anchor: 'center'
+				};
+
+				console.log(options);
+
+				tb.loadObj(options, (_model) => {
+					this.model = _model;
+					tb.add(_model);
+				});
+
+				_map.fire('3dmodeladded');
+			},
+
+			render: function (gl, matrix) {
+				tb.update();
+			}
+		});
+	}
+
+	setCoordsWithZOffset(coords) {
+		this.model.setCoords([...coords.slice(0,2), this.zOffset]);
+	}
+
+	setWithZOffset({coords, rotation, duration}) {
+		this.model.set({coords: [...coords.slice(0,2), this.zOffset], rotation, duration})
+	}
 
 }
 
@@ -805,7 +690,6 @@ const add3DModel = (_map, initialLocation) => {
 	// const defaultModelRotationValues = addElkModel(_map, initialLocation);
 
 	return defaultModelRotationValues;
-
 }
 
 const getInitialBearing = (_data) => {
@@ -817,25 +701,51 @@ const getInitialBearing = (_data) => {
 	
 }
 
-window.tb = new Threebox(
-	map,
-	map.getCanvas().getContext('webgl'),
-	{
-		defaultLights: true,
-	}
-);
-
 // import Stats from 'https://threejs.org/examples/jsm/libs/stats.module.js';
-let stats;
+// let stats;
 
-function animate() {
-	requestAnimationFrame(animate);
-	stats.update();
-}
+// const animatedModel = new ThreeBoxModel({modelPath:'./models/elk_wip.glb', animated: true, initialRotation: { x: 90, y: -90, z: 0 }, scale: 10, zOffset:-20, animationSpeed: 1});
+// const animatedModel = new ThreeBoxModel({modelPath:'./models/runner.glb', animated: true, initialRotation: { x: 90, y: -90, z: 0 }, scale: 40, zOffset:0, animationSpeed: 1});
+// const animatedModel = new ThreeBoxModel({modelPath:'./models/drifter_truck.glb', initialRotation: { x: 90, y: 180, z: 0 }, scale: 0.05, zOffset:0, animationSpeed: 1});
+// const animatedModel = new ThreeBoxModel({modelPath:'./models/camry.glb', initialRotation: { x: 90, y: -90, z: 0 }, scale: 10, zOffset:0, animationSpeed: 1});
+// const animatedModel = new ThreeBoxModel({modelPath:'./models/sonic_runner.glb', animated: true, initialRotation: { x: 90, y: -90, z: 0 }, scale: 10, zOffset:0, animationSpeed: 5});
+// const animatedModel = new ThreeBoxModel({modelPath:'./models/santa_sleigh.glb', animated: false, initialRotation: { x: 90, y: 180, z: 0 }, scale: 2, zOffset:0, animationSpeed: 0});
+// const animatedModel = new ThreeBoxModel({modelPath:'./models/pig_sleigh.glb', animated: true, initialRotation: { x: 90, y: 180, z: 0 }, scale: 1, zOffset:0, animationSpeed: 1});
+// const animatedModel = new ThreeBoxModel({modelPath:'./models/tron_bike.glb', animated: true, initialRotation: { x: 90, y: 90, z: 0 }, scale: 20, zOffset:0, animationSpeed: 1});
+const animatedModel = new ThreeBoxModel({modelPath:'./models/santa_claus.glb', animated: false, initialRotation: { x: 90, y: 0, z: 0 }, scale: 20, zOffset:20, animationSpeed: 1});
+
 
 map.on('style.load', async () => {
 	map.setConfigProperty('basemap', 'lightPreset', 'dawn');
 	map.setConfigProperty('basemap', 'fog', [0.5,15] );
+
+	// addCustom3DModelLayer(map, './models/runner.glb', { x: 90, y: -90, z: 0 }, 40);
+	animatedModel.addModelLayerToMap(map);
+	// addCustom3DModelLayer(map, './models/elk_wip.glb', { x: 90, y: -90, z: 0 }, 10);
+
+	// map.addSource('mapbox-dem', {
+	// 	'type': 'raster-dem',
+	// 	'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+	// 	'tileSize': 512,
+	// 	'maxzoom': 14
+	// });
+
+	// map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1 })
+
+	// const initialBearing = getInitialBearing(nycData);
+	// const azimuthAngle = turf.bearingToAzimuth(initialBearing);
+
+	// map.setPaintProperty("modellayer", "model-rotation", [defaultModelRotationValues[0], defaultModelRotationValues[1], azimuthAngle - 90])
+	map.setFog({'range': [0,20]})
+
+	map.on('click', (evt) => {
+		console.log("Position: ", evt.lngLat);
+	});
+
+});
+
+map.on('3dmodeladded', async (e) => {
+	console.log(e);
 
 	let londonData = await fetchGeoJsonData('http://localhost:8000/routes_geojson/LondonMarathon.geojson')
 	let bostonData = await fetchGeoJsonData('http://localhost:8000/routes_geojson/BostonMarathon.geojson')
@@ -846,84 +756,24 @@ map.on('style.load', async () => {
 	let parisData = await fetchGeoJsonData('http://localhost:8000/routes_geojson/ParisOlympicsMarathon.geojson')
 	let lasVegassData = await fetchGeoJsonData('http://localhost:8000/routes_geojson/LasVegasMarathon.geojson')
 
-	// const defaultModelRotationValues = add3DModel(map, nycData.features[0].geometry.coordinates[0]);
-	stats = new Stats();
-	map.getContainer().appendChild(stats.dom);
-	animate();
-
-	let model;
-
-	map.addLayer({
-		id: 'custom-threebox-model',
-		type: 'custom',
-		renderingMode: '3d',
-		onAdd: function (map, mbxContext) {
-			const scale = 10;
-			const options = {
-				obj: './models/runner.glb',
-				type: 'gltf',
-				scale: { x: scale, y: scale, z: scale },
-				units: 'meters',
-				rotation: { x: 90, y: -90, z: 0 }
-			};
-
-			tb.loadObj(options, (_model) => {
-				let model = _model;
-				model.setCoords(nycData.features[0].geometry.coordinates[0]);
-				model.setRotation({ x: 0, y: 0, z: 241 });
-				tb.add(model);
-			});
-		},
-
-		render: function (gl, matrix) {
-			tb.update();
-		}
-	});
-
-	// map.addSource('mapbox-dem', {
-	// 	'type': 'raster-dem',
-	// 	'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
-	// 	'tileSize': 512,
-	// 	'maxzoom': 14
-	// });
-
-	// map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 })
-
 	const initialBearing = getInitialBearing(nycData);
-	const azimuthAngle = turf.bearingToAzimuth(initialBearing);
 
-	// map.setPaintProperty("modellayer", "model-rotation", [defaultModelRotationValues[0], defaultModelRotationValues[1], azimuthAngle - 90])
-	map.setFog({ 'range': [0,20]})
+	const initialNYCCoordinates = nycData.features[0].geometry.coordinates[0];
 
-	addRouteWithModel(map, londonData, 'london-marathon','TCS London Marathon', model);
-	addRouteWithModel(map, bostonData, 'boston-marathon', 'Boston Marathon', model);
-	addRouteWithModel(map, chicagoData, 'chicago-marathon', 'Chicago Marathon', model);
-	addRouteWithModel(map, tokyoData, 'tokyo-marathon', 'Tokyo Marathon', model);
-	addRouteWithModel(map, berlinData, 'berlin-marathon', 'BMW Berlin Marathon', model);
-	addRouteWithModel(map, nycData, 'nyc-marathon', 'TCS NYC Marathon', model);
-	addRouteWithModel(map, parisData, 'paris-marathon', 'Paris Olympics Marathon', model);
-	addRouteWithModel(map, lasVegassData, 'las-vegas-marathon', 'Las Vegas Rock n Roll Marathon', model);
+	animatedModel.setCoordsWithZOffset(initialNYCCoordinates);
+	animatedModel.model.setRotation(90 - initialBearing);
 
-	// addRoute(map, londonData, 'london-marathon','TCS London Marathon', defaultModelRotationValues);
-	// addRoute(map, bostonData, 'boston-marathon', 'Boston Marathon', defaultModelRotationValues);
-	// addRoute(map, chicagoData, 'chicago-marathon', 'Chicago Marathon', defaultModelRotationValues);
-	// addRoute(map, tokyoData, 'tokyo-marathon', 'Tokyo Marathon', defaultModelRotationValues);
-	// addRoute(map, berlinData, 'berlin-marathon', 'BMW Berlin Marathon', defaultModelRotationValues);
-	// addRoute(map, nycData, 'nyc-marathon', 'TCS NYC Marathon', defaultModelRotationValues);
-	// addRoute(map, parisData, 'paris-marathon', 'Paris Olympics Marathon', defaultModelRotationValues);
-	// addRoute(map, lasVegassData, 'las-vegas-marathon', 'Las Vegas Rock n Roll Marathon', defaultModelRotationValues);
-
-	map.on('click', (evt) => {
-		console.log("Position: ", evt.lngLat);
-	});
-
-
-	// playAnimations(map, bostonData);
-
-
-// followRouteWithCamera(nycData.features[0].geometry.coordinates);
+	addRouteWithModel(map, londonData, 'london-marathon','TCS London Marathon', animatedModel);
+	addRouteWithModel(map, bostonData, 'boston-marathon', 'Boston Marathon', animatedModel);
+	addRouteWithModel(map, chicagoData, 'chicago-marathon', 'Chicago Marathon', animatedModel);
+	addRouteWithModel(map, tokyoData, 'tokyo-marathon', 'Tokyo Marathon', animatedModel);
+	addRouteWithModel(map, berlinData, 'berlin-marathon', 'BMW Berlin Marathon', animatedModel);
+	addRouteWithModel(map, nycData, 'nyc-marathon', 'TCS NYC Marathon', animatedModel);
+	addRouteWithModel(map, parisData, 'paris-marathon', 'Paris Olympics Marathon', animatedModel);
+	addRouteWithModel(map, lasVegassData, 'las-vegas-marathon', 'Las Vegas Rock n Roll Marathon', animatedModel);
 
 });
+
 
 
 
