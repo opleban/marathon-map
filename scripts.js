@@ -8,7 +8,7 @@ const BEARING_PARAMETER = 1.5;
 let animationStopped = false;
 let altitudeValue;
 let pitchValue;
-let model;
+let letItSnow = true;
 
 const interruptAnimation = () => {
 	animationStopped = true
@@ -80,13 +80,13 @@ const addRouteWithModel = (_map, _data, _sourceName, _prettyName, _model) => {
 			'slot': 'middle',
 			'source': _sourceName,
 			'paint': {
-			  "line-color": "rgba(60, 179, 113, 1)",
-			  "line-width": 6,
-			  "line-opacity": 1
+				"line-color": "rgba(60, 179, 113, 1)",
+				"line-width": 6,
+				"line-opacity": 1
 			},
 			'layout': {
-			  "line-cap": "round",
-			  "line-join": "round"
+				"line-cap": "round",
+				"line-join": "round"
 			}
 		});
 
@@ -99,6 +99,7 @@ const addRouteWithModel = (_map, _data, _sourceName, _prettyName, _model) => {
 	// Add marker at start of route;
 	const startingCoords = getStartingCoordinates(_data);
 	addPlayMarker(startingCoords, _sourceName);
+	// makeItSnow(_map, _data, _sourceName);
 }
 
 const getStartingCoordinates = (_data) => {
@@ -297,8 +298,8 @@ const animatePathWithModel = async ({ _map, trackId, duration, path, startBearin
 					"red",
 					animationPhase,
 					"rgba(60, 179, 113, 1)",
-				]
-			);
+					]
+				);
 
 			const bearing = turf.bearing(alongPath, upcomingPath);
 
@@ -401,7 +402,7 @@ const flyInAndRotate = async ({
 			camera.position = mapboxgl.MercatorCoordinate.fromLngLat(
 				correctedPosition,
 				currentAltitude
-			);
+				);
 
       // apply the new camera options
 			_map.setFreeCameraOptions(camera);
@@ -705,14 +706,14 @@ const getInitialBearing = (_data) => {
 // let stats;
 
 // const animatedModel = new ThreeBoxModel({modelPath:'./models/elk_wip.glb', animated: true, initialRotation: { x: 90, y: -90, z: 0 }, scale: 10, zOffset:-20, animationSpeed: 1});
-// const animatedModel = new ThreeBoxModel({modelPath:'./models/runner.glb', animated: true, initialRotation: { x: 90, y: -90, z: 0 }, scale: 40, zOffset:0, animationSpeed: 1});
+const animatedModel = new ThreeBoxModel({modelPath:'./models/runner.glb', animated: true, initialRotation: { x: 90, y: -90, z: 0 }, scale: 40, zOffset:0, animationSpeed: 1});
 // const animatedModel = new ThreeBoxModel({modelPath:'./models/drifter_truck.glb', initialRotation: { x: 90, y: 180, z: 0 }, scale: 0.05, zOffset:0, animationSpeed: 1});
 // const animatedModel = new ThreeBoxModel({modelPath:'./models/camry.glb', initialRotation: { x: 90, y: -90, z: 0 }, scale: 10, zOffset:0, animationSpeed: 1});
 // const animatedModel = new ThreeBoxModel({modelPath:'./models/sonic_runner.glb', animated: true, initialRotation: { x: 90, y: -90, z: 0 }, scale: 10, zOffset:0, animationSpeed: 5});
 // const animatedModel = new ThreeBoxModel({modelPath:'./models/santa_sleigh.glb', animated: false, initialRotation: { x: 90, y: 180, z: 0 }, scale: 2, zOffset:0, animationSpeed: 0});
 // const animatedModel = new ThreeBoxModel({modelPath:'./models/pig_sleigh.glb', animated: true, initialRotation: { x: 90, y: 180, z: 0 }, scale: 1, zOffset:0, animationSpeed: 1});
 // const animatedModel = new ThreeBoxModel({modelPath:'./models/tron_bike.glb', animated: true, initialRotation: { x: 90, y: 90, z: 0 }, scale: 20, zOffset:0, animationSpeed: 1});
-const animatedModel = new ThreeBoxModel({modelPath:'./models/santa_claus.glb', animated: false, initialRotation: { x: 90, y: 0, z: 0 }, scale: 20, zOffset:20, animationSpeed: 1});
+// const animatedModel = new ThreeBoxModel({modelPath:'./models/santa_claus.glb', animated: false, initialRotation: { x: 90, y: 0, z: 0 }, scale: 20, zOffset:20, animationSpeed: 1});
 
 
 map.on('style.load', async () => {
@@ -744,6 +745,111 @@ map.on('style.load', async () => {
 
 });
 
+const SNOW_BUFFER = 0.1
+
+const makeItSnow =(_map, routeData, routeId) => {
+	// const minLat = 46.5;
+	// const maxLat = 47.25;
+	// const minLon = -122;
+	// const maxLon = -121.5;
+
+	// console.log(routeData);
+	const [minLon, minLat, maxLon, maxLat] = turf.bbox(routeData);
+
+	const points = createPoints({minLon: minLon-SNOW_BUFFER, maxLon: maxLon+SNOW_BUFFER, minLat: minLat-SNOW_BUFFER, maxLat: maxLat+SNOW_BUFFER});
+
+	const snowLayer = ({
+		id: 'snow-' + routeId,
+		type: 'custom',
+		renderingMode: '3d',
+  	// method called when the layer is added to the map
+  	// https://docs.mapbox.com/mapbox-gl-js/api/#styleimageinterface#onadd
+		onAdd: function (map, gl) {
+			gl.enable(gl.DEPTH_TEST);
+
+    // link the two shaders into a WebGL program
+			this.programInfo = programInfo(gl,vsSource,fsSource);
+			this.map = map;
+
+    //texture for particle billboards
+			const circleTexture = gl.createTexture();
+			gl.bindTexture(gl.TEXTURE_2D, circleTexture);
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, particleCanvas);
+
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+    //texture for snowflake circle SDF
+			this.circleTexture = circleTexture;
+    //buffer to hold particle location
+			this.buffersTrans = gl.createBuffer();
+    //buffer to hold vertices of texture
+			this.buffersSquare = gl.createBuffer();
+
+    	},//end onAdd,
+
+    	// method fired on each animation frame
+    	// https://docs.mapbox.com/mapbox-gl-js/api/#map.event:render
+    	render: renderFunction(points, map) 
+    });
+
+	map.addLayer(snowLayer);
+	let _frame;
+	let _then;
+
+	(function idraw(now) {
+		now *= 0.001;
+		let deltaTime;
+		if (_then) {
+			deltaTime = now-_then;
+		} else {
+			deltaTime = 0;
+		}
+		_then = now;
+		if (letItSnow) {
+//update billboard center points (6 * 3)
+		for (let i=0; i<numElements; i++) {
+			points.points[i].propagate(deltaTime);
+			points.tData[i*18+1] = points.points[i].y;
+			points.tData[i*18+4] = points.points[i].y;
+			points.tData[i*18+7] = points.points[i].y;
+			points.tData[i*18] = points.points[i].x;
+			points.tData[i*18+3] = points.points[i].x;
+			points.tData[i*18+6] = points.points[i].x;
+			points.tData[i*18+2] = points.points[i].z;
+			points.tData[i*18+5] = points.points[i].z;
+			points.tData[i*18+8] = points.points[i].z;
+			points.tData[i*18+9] = points.points[i].x;
+			points.tData[i*18+10] = points.points[i].y;
+			points.tData[i*18+11] = points.points[i].z;
+
+			points.tData[i*18+12] = points.points[i].x;
+			points.tData[i*18+13] = points.points[i].y;
+			points.tData[i*18+14] = points.points[i].z;
+
+			points.tData[i*18+15] = points.points[i].x;
+			points.tData[i*18+16] = points.points[i].y;
+			points.tData[i*18+17] = points.points[i].z;
+		}
+
+		map.triggerRepaint();
+
+		for (let i=0; i<numElements; i++) {
+			points.points[i].resetY();
+		}
+	}
+
+		//request another frame
+		frame = requestAnimationFrame(idraw);
+	})();
+
+}
+
+let bringSnow = {}
+
+
 map.on('3dmodeladded', async (e) => {
 	console.log(e);
 
@@ -754,7 +860,15 @@ map.on('3dmodeladded', async (e) => {
 	let berlinData = await fetchGeoJsonData('http://localhost:8000/routes_geojson/BerlinMarathon.geojson')
 	let nycData = await fetchGeoJsonData('http://localhost:8000/routes_geojson/NYCMarathon.geojson')
 	let parisData = await fetchGeoJsonData('http://localhost:8000/routes_geojson/ParisOlympicsMarathon.geojson')
-	let lasVegassData = await fetchGeoJsonData('http://localhost:8000/routes_geojson/LasVegasMarathon.geojson')
+	let lasVegasData = await fetchGeoJsonData('http://localhost:8000/routes_geojson/LasVegasMarathon.geojson')
+	let miamiMarathonData = await fetchGeoJsonData('http://localhost:8000/routes_geojson/MiamiMarathon.geojson')
+
+	bringSnow.ToNewYork = () => makeItSnow(map, nycData, 'nyc-marathon')
+	bringSnow.ToBerlin = () => makeItSnow(map, berlinData, 'berlin-marathon')
+	bringSnow.ToTokyo = () => makeItSnow(map, tokyoData, 'tokyo-marathon')
+	bringSnow.ToChicago = () => makeItSnow(map, chicagoData, 'chicago-marathon')
+	bringSnow.ToBoston = () => makeItSnow(map, bostonData, 'boston-marathon')
+	bringSnow.ToParis = () => makeItSnow(map, parisData, 'paris-marathon')
 
 	const initialBearing = getInitialBearing(nycData);
 
@@ -770,10 +884,9 @@ map.on('3dmodeladded', async (e) => {
 	addRouteWithModel(map, berlinData, 'berlin-marathon', 'BMW Berlin Marathon', animatedModel);
 	addRouteWithModel(map, nycData, 'nyc-marathon', 'TCS NYC Marathon', animatedModel);
 	addRouteWithModel(map, parisData, 'paris-marathon', 'Paris Olympics Marathon', animatedModel);
-	addRouteWithModel(map, lasVegassData, 'las-vegas-marathon', 'Las Vegas Rock n Roll Marathon', animatedModel);
+	addRouteWithModel(map, lasVegasData, 'las-vegas-marathon', 'Las Vegas Rock n Roll Marathon', animatedModel);
+	addRouteWithModel(map, miamiMarathonData, 'miami-marathon', 'Miami Marathon', animatedModel);
 
 });
-
-
 
 
