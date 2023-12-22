@@ -714,6 +714,7 @@ const getInitialBearing = (_data) => {
 // const animatedModel = new ThreeBoxModel({modelPath:'./models/pig_sleigh.glb', animated: true, initialRotation: { x: 90, y: 180, z: 0 }, scale: 1, zOffset:0, animationSpeed: 1});
 // const animatedModel = new ThreeBoxModel({modelPath:'./models/tron_bike.glb', animated: true, initialRotation: { x: 90, y: 90, z: 0 }, scale: 20, zOffset:0, animationSpeed: 1});
 const animatedModel = new ThreeBoxModel({modelPath:'./models/santa_claus.glb', animated: false, initialRotation: { x: 90, y: 0, z: 0 }, scale: 20, zOffset:20, animationSpeed: 1});
+// const animatedModel = new ThreeBoxModel({modelPath:'./models/donkey_kong_model.glb', animated: true, initialRotation: { x: 90, y: 90, z: 0 }, scale: 20, zOffset:10, animationSpeed: 1});
 
 
 map.on('style.load', async () => {
@@ -862,6 +863,8 @@ map.on('3dmodeladded', async (e) => {
 	let parisData = await fetchGeoJsonData('./routes_geojson/ParisOlympicsMarathon.geojson')
 	let lasVegasData = await fetchGeoJsonData('./routes_geojson/LasVegasMarathon.geojson')
 	let miamiMarathonData = await fetchGeoJsonData('./routes_geojson/MiamiMarathon.geojson')
+	let sanFranciscoMarathonData = await fetchGeoJsonData('./routes_geojson/SanFranciscoMarathon.geojson')
+	let napaValleyMarathonData = await fetchGeoJsonData('./routes_geojson/NapaValleyoMarathon.geojson')
 
 	bringSnow.ToNewYork = () => makeItSnow(map, nycData, 'nyc-marathon')
 	bringSnow.ToBerlin = () => makeItSnow(map, berlinData, 'berlin-marathon')
@@ -886,7 +889,8 @@ map.on('3dmodeladded', async (e) => {
 	addRouteWithModel(map, parisData, 'paris-marathon', 'Paris Olympics Marathon', animatedModel);
 	addRouteWithModel(map, lasVegasData, 'las-vegas-marathon', 'Las Vegas Rock n Roll Marathon', animatedModel);
 	addRouteWithModel(map, miamiMarathonData, 'miami-marathon', 'Miami Marathon', animatedModel);
-
+	addRouteWithModel(map, sanFranciscoMarathonData, 'san-francisco-marathon', 'SF Marathon', animatedModel);
+	addRouteWithModel(map, napaValleyMarathonData, 'napa-valley-marathon', 'Napa Valley Marathon', animatedModel);
 });
 
 
