@@ -1,14 +1,15 @@
-// https://d3js.org/d3-ease/ v3.0.1 Copyright 2010-2021 Mike Bostock, 2001 Robert Penner
-!function(n,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"function"==typeof define&&define.amd?define(["exports"],e):e((n="undefined"!=typeof globalThis?globalThis:n||self).d3=n.d3||{})}(this,(function(n){"use strict";function e(n){return((n*=2)<=1?n*n:--n*(2-n)+1)/2}function t(n){return((n*=2)<=1?n*n*n:(n-=2)*n*n+2)/2}var u=function n(e){function t(n){return Math.pow(n,e)}return e=+e,t.exponent=n,t}(3),r=function n(e){function t(n){return 1-Math.pow(1-n,e)}return e=+e,t.exponent=n,t}(3),a=function n(e){function t(n){return((n*=2)<=1?Math.pow(n,e):2-Math.pow(2-n,e))/2}return e=+e,t.exponent=n,t}(3),o=Math.PI,i=o/2;function c(n){return(1-Math.cos(o*n))/2}function s(n){return 1.0009775171065494*(Math.pow(2,-10*n)-.0009765625)}function f(n){return((n*=2)<=1?s(1-n):2-s(n-1))/2}function h(n){return((n*=2)<=1?1-Math.sqrt(1-n*n):Math.sqrt(1-(n-=2)*n)+1)/2}var p=4/11,M=7.5625;function d(n){return(n=+n)<p?M*n*n:n<.7272727272727273?M*(n-=.5454545454545454)*n+.75:n<.9090909090909091?M*(n-=.8181818181818182)*n+.9375:M*(n-=.9545454545454546)*n+.984375}var l=1.70158,I=function n(e){function t(n){return(n=+n)*n*(e*(n-1)+n)}return e=+e,t.overshoot=n,t}(l),O=function n(e){function t(n){return--n*n*((n+1)*e+n)+1}return e=+e,t.overshoot=n,t}(l),x=function n(e){function t(n){return((n*=2)<1?n*n*((e+1)*n-e):(n-=2)*n*((e+1)*n+e)+2)/2}return e=+e,t.overshoot=n,t}(l),v=2*Math.PI,y=function n(e,t){var u=Math.asin(1/(e=Math.max(1,e)))*(t/=v);function r(n){return e*s(- --n)*Math.sin((u-n)/t)}return r.amplitude=function(e){return n(e,t*v)},r.period=function(t){return n(e,t)},r}(1,.3),b=function n(e,t){var u=Math.asin(1/(e=Math.max(1,e)))*(t/=v);function r(n){return 1-e*s(n=+n)*Math.sin((n+u)/t)}return r.amplitude=function(e){return n(e,t*v)},r.period=function(t){return n(e,t)},r}(1,.3),m=function n(e,t){var u=Math.asin(1/(e=Math.max(1,e)))*(t/=v);function r(n){return((n=2*n-1)<0?e*s(-n)*Math.sin((u-n)/t):2-e*s(n)*Math.sin((u+n)/t))/2}return r.amplitude=function(e){return n(e,t*v)},r.period=function(t){return n(e,t)},r}(1,.3);n.easeBack=x,n.easeBackIn=I,n.easeBackInOut=x,n.easeBackOut=O,n.easeBounce=d,n.easeBounceIn=function(n){return 1-d(1-n)},n.easeBounceInOut=function(n){return((n*=2)<=1?1-d(1-n):d(n-1)+1)/2},n.easeBounceOut=d,n.easeCircle=h,n.easeCircleIn=function(n){return 1-Math.sqrt(1-n*n)},n.easeCircleInOut=h,n.easeCircleOut=function(n){return Math.sqrt(1- --n*n)},n.easeCubic=t,n.easeCubicIn=function(n){return n*n*n},n.easeCubicInOut=t,n.easeCubicOut=function(n){return--n*n*n+1},n.easeElastic=b,n.easeElasticIn=y,n.easeElasticInOut=m,n.easeElasticOut=b,n.easeExp=f,n.easeExpIn=function(n){return s(1-+n)},n.easeExpInOut=f,n.easeExpOut=function(n){return 1-s(n)},n.easeLinear=n=>+n,n.easePoly=a,n.easePolyIn=u,n.easePolyInOut=a,n.easePolyOut=r,n.easeQuad=e,n.easeQuadIn=function(n){return n*n},n.easeQuadInOut=e,n.easeQuadOut=function(n){return n*(2-n)},n.easeSin=c,n.easeSinIn=function(n){return 1==+n?1:1-Math.cos(n*i)},n.easeSinInOut=c,n.easeSinOut=function(n){return Math.sin(n*i)},Object.defineProperty(n,"__esModule",{value:!0})}));
+const map = new mapboxgl.Map({
+	container: 'map', // container ID
+	style: 'mapbox://styles/opleban/clpvf0cdm00w601qu2pyq6shp', // style URL
+	center: [-74.0578574090154, 40.60240962462245], // starting position [lng, lat]
+	zoom: 17, // starting zoom
+	pitch: 50,
+	bearing: 0.4
+});
 
-mapboxgl.accessToken = 'pk.eyJ1Ijoib3BsZWJhbiIsImEiOiI0VXNzcXFRIn0.uE_om5U3KbYO_Xy-tsSRiQ'
+window.tb = new Threebox(map, map.getCanvas().getContext('webgl'), { defaultLights: true });
 
-const BEARING_PARAMETER = 1.5;
-
-let animationStopped = false;
-let altitudeValue;
-let pitchValue;
-let letItSnow = true;
+map.addControl(new MarathonMapControl());
 
 const interruptAnimation = () => {
 	animationStopped = true
@@ -123,82 +124,82 @@ const showFullRoute = (_map, routeGeoJSON) => {
 	});
 }
 
-class HelloWorldControl {
-	onAdd(map) {
-		this._map = map;
-		this._container = document.createElement('div');
-		this._container.className = 'mapboxgl-ctrl';
+// class HelloWorldControl {
+// 	onAdd(map) {
+// 		this._map = map;
+// 		this._container = document.createElement('div');
+// 		this._container.className = 'mapboxgl-ctrl';
 
-		const topFiller = document.createElement('span');
-		topFiller.setAttribute('style', 'width: 20px; display: inline-block');
-		this._container.appendChild(topFiller);
+// 		const topFiller = document.createElement('span');
+// 		topFiller.setAttribute('style', 'width: 20px; display: inline-block');
+// 		this._container.appendChild(topFiller);
 
-		this._tiltUpButton = document.createElement('button')
-		this._tiltUpButton.id = 'tilt-up';
-		this._tiltUpButton.textContent = '↑';
-		this._container.appendChild(this._tiltUpButton);
-		this._tiltUpButton.addEventListener('click', () => {
-			console.log("tilt up");
-			pitchValue = this._map.getPitch() + 5;
-			console.log("altitude: ", altitudeValue);
-			console.log("pitch: ", pitchValue);
-		});
+// 		this._tiltUpButton = document.createElement('button')
+// 		this._tiltUpButton.id = 'tilt-up';
+// 		this._tiltUpButton.textContent = '↑';
+// 		this._container.appendChild(this._tiltUpButton);
+// 		this._tiltUpButton.addEventListener('click', () => {
+// 			console.log("tilt up");
+// 			pitchValue = this._map.getPitch() + 5;
+// 			console.log("altitude: ", altitudeValue);
+// 			console.log("pitch: ", pitchValue);
+// 		});
 
-		const brOne = document.createElement('br');
-		this._container.appendChild(brOne);
+// 		const brOne = document.createElement('br');
+// 		this._container.appendChild(brOne);
 
-		this._zoomInbutton = document.createElement('button')
-		this._zoomInbutton.id = 'zoom-in';
-		this._zoomInbutton.textContent = '+';
-		this._container.appendChild(this._zoomInbutton);
-		this._zoomInbutton.addEventListener('click', () => {
-			console.log("zoom in");
-			altitudeValue = this._map.getFreeCameraOptions()._position.toAltitude() - 50;
-			console.log("altitude: ", altitudeValue);
-			console.log("pitch: ", pitchValue);
-		});
+// 		this._zoomInbutton = document.createElement('button')
+// 		this._zoomInbutton.id = 'zoom-in';
+// 		this._zoomInbutton.textContent = '+';
+// 		this._container.appendChild(this._zoomInbutton);
+// 		this._zoomInbutton.addEventListener('click', () => {
+// 			console.log("zoom in");
+// 			altitudeValue = this._map.getFreeCameraOptions()._position.toAltitude() - 50;
+// 			console.log("altitude: ", altitudeValue);
+// 			console.log("pitch: ", pitchValue);
+// 		});
 
-		const midFiller = document.createElement('span');
-		midFiller.setAttribute('style', 'width: 20px; display: inline-block');
-		this._container.appendChild(midFiller);
+// 		const midFiller = document.createElement('span');
+// 		midFiller.setAttribute('style', 'width: 20px; display: inline-block');
+// 		this._container.appendChild(midFiller);
 
-		this._zoomOutbutton = document.createElement('button')
-		this._zoomOutbutton.id = 'zoom-out';
-		this._zoomOutbutton.textContent = '-';
-		this._container.appendChild(this._zoomOutbutton);
-		this._zoomOutbutton.addEventListener('click', () => {
-			console.log("zoom out");
-			altitudeValue = this._map.getFreeCameraOptions()._position.toAltitude() + 50;
-			console.log("altitude: ", altitudeValue);
-			console.log("pitch: ", pitchValue);
-		});
+// 		this._zoomOutbutton = document.createElement('button')
+// 		this._zoomOutbutton.id = 'zoom-out';
+// 		this._zoomOutbutton.textContent = '-';
+// 		this._container.appendChild(this._zoomOutbutton);
+// 		this._zoomOutbutton.addEventListener('click', () => {
+// 			console.log("zoom out");
+// 			altitudeValue = this._map.getFreeCameraOptions()._position.toAltitude() + 50;
+// 			console.log("altitude: ", altitudeValue);
+// 			console.log("pitch: ", pitchValue);
+// 		});
 
-		const brTwo = document.createElement('br');
-		this._container.appendChild(brTwo);
+// 		const brTwo = document.createElement('br');
+// 		this._container.appendChild(brTwo);
 
-		const bottomFiller = document.createElement('span');
-		bottomFiller.setAttribute('style', 'width: 20px; display: inline-block');
-		this._container.appendChild(bottomFiller);
+// 		const bottomFiller = document.createElement('span');
+// 		bottomFiller.setAttribute('style', 'width: 20px; display: inline-block');
+// 		this._container.appendChild(bottomFiller);
 
-		this._tiltDownButton = document.createElement('button')
-		this._tiltDownButton.id = 'tilt-down';
-		this._tiltDownButton.textContent = '↓';
-		this._container.appendChild(this._tiltDownButton);
-		this._tiltDownButton.addEventListener('click', () => {
-			console.log("tilt down");
-			pitchValue = this._map.getPitch() - 10;
-			console.log("altitude: ", altitudeValue);
-			console.log("pitch: ", pitchValue);
-		});
+// 		this._tiltDownButton = document.createElement('button')
+// 		this._tiltDownButton.id = 'tilt-down';
+// 		this._tiltDownButton.textContent = '↓';
+// 		this._container.appendChild(this._tiltDownButton);
+// 		this._tiltDownButton.addEventListener('click', () => {
+// 			console.log("tilt down");
+// 			pitchValue = this._map.getPitch() - 10;
+// 			console.log("altitude: ", altitudeValue);
+// 			console.log("pitch: ", pitchValue);
+// 		});
 
-		return this._container;
-	}
+// 		return this._container;
+// 	}
 
-	onRemove() {
-		this._container.parentNode.removeChild(this._container);
-		this._map = undefined;
-	}
-}
+// 	onRemove() {
+// 		this._container.parentNode.removeChild(this._container);
+// 		this._map = undefined;
+// 	}
+// }
 
 // amazingly simple, via https://codepen.io/ma77os/pen/OJPVrP
 function lerp(start, end, amt) {
@@ -531,19 +532,6 @@ const playAnimations = async (_map, trackGeojson, _defaultModelRotationValues) =
 };
 
 
-const map = new mapboxgl.Map({
-	container: 'map', // container ID
-	style: 'mapbox://styles/opleban/clpvf0cdm00w601qu2pyq6shp', // style URL
-	center: [-74.0578574090154, 40.60240962462245], // starting position [lng, lat]
-	zoom: 17, // starting zoom
-	pitch: 50,
-	bearing: 0.4
-});
-
-window.tb = new Threebox(map, map.getCanvas().getContext('webgl'), { defaultLights: true });
-
-map.addControl(new HelloWorldControl());
-
 const addSantaSleighModel = (_map, initialLocation) => {
 	map.addSource('mysource', {
 		type: 'geojson',
@@ -746,8 +734,6 @@ map.on('style.load', async () => {
 
 });
 
-const SNOW_BUFFER = 0.1
-
 const makeItSnow =(_map, routeData, routeId) => {
 	// const minLat = 46.5;
 	// const maxLat = 47.25;
@@ -847,8 +833,6 @@ const makeItSnow =(_map, routeData, routeId) => {
 	})();
 
 }
-
-let bringSnow = {}
 
 
 map.on('3dmodeladded', async (e) => {
