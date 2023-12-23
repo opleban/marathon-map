@@ -863,8 +863,8 @@ map.on('3dmodeladded', async (e) => {
 	let parisData = await fetchGeoJsonData('./routes_geojson/ParisOlympicsMarathon.geojson')
 	let lasVegasData = await fetchGeoJsonData('./routes_geojson/LasVegasMarathon.geojson')
 	let miamiMarathonData = await fetchGeoJsonData('./routes_geojson/MiamiMarathon.geojson')
-	let sanFranciscoMarathonData = await fetchGeoJsonData('./routes_geojson/SanFranciscoMarathon.geojson')
-	let napaValleyMarathonData = await fetchGeoJsonData('./routes_geojson/NapaValleyoMarathon.geojson')
+	let sanFranciscoMarathonData = await fetchGeoJsonData('./routes_geojson/SFMarathon.geojson')
+	let napaValleyMarathonData = await fetchGeoJsonData('./routes_geojson/NapaValleyMarathon.geojson')
 
 	bringSnow.ToNewYork = () => makeItSnow(map, nycData, 'nyc-marathon')
 	bringSnow.ToBerlin = () => makeItSnow(map, berlinData, 'berlin-marathon')

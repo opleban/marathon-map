@@ -1,0 +1,22 @@
+.container {
+	margin: auto;
+}
+
+#map {
+	display: block;
+	margin: auto;
+}
+
+@media only screen and (max-width: 600px) {
+	#map {
+		width: 95%; 
+		height: 85vh;
+	}
+}
+
+@media only screen and (min-width: 601px) {
+	#map {
+		width: 95%; 
+		height: 85vh;
+	}
+}
