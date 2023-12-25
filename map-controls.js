@@ -74,3 +74,55 @@ class MarathonMapControl {
 		this._map = undefined;
 	}
 }
+
+class MarathonDropdownSelection {
+	constructor({callbackFn}) {
+		this.callbackFn = callbackFn;
+		this.dataSources = {};
+	}
+
+	onAdd(map) {
+		this._map = map;
+		this._container = document.createElement('div');
+		this._container.className = 'mapboxgl-dropdown-ctrl mapboxgl-ctrl';
+		this._select = document.createElement('select');
+		const defaultOption = document.createElement('option');
+		defaultOption.value="none";
+		defaultOption.selected = true;
+		defaultOption.hidden = true
+		defaultOption.disabled = true;
+		defaultOption.textContent = "Select a marathon route"
+		const emptyOption = document.createElement('option');
+		emptyOption.value="none";
+		emptyOption.disabled = true;
+		this._select.appendChild(defaultOption);
+		this._select.appendChild(emptyOption);
+		this._select.id = "marathons";
+		this._select.name ="marathons";
+		this._select.addEventListener('change', (evt) => {
+			this.callbackFn({data: this.dataSources[evt.target.value], map: this._map});
+			
+		})
+
+		this._container.appendChild(this._select);
+
+		return this._container;
+	}
+
+	addOption({prettyName, value, data, model}) {
+		const optionItem = document.createElement('option');
+		optionItem.textContent = prettyName;
+		optionItem.value = value;
+		this.dataSources[value] = data;
+		this._select.appendChild(optionItem);
+	}
+
+	onRemove() {
+		this._container.parentNode.removeChild(this._container);
+		this._map = undefined;
+	}
+
+	getDefaultPosition() {
+		return 'top-left'
+	}
+}
