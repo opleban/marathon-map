@@ -15,7 +15,6 @@ class ThreeBoxModel {
 			type: 'custom',
 			renderingMode: '3d',
 			onAdd: (_map, mbxContext) => {
-				console.log(this);
 				const options = {
 					obj: this.modelPath,
 					type: 'gltf',
@@ -24,8 +23,6 @@ class ThreeBoxModel {
 					rotation: this.initialRotation,
 					anchor: 'center'
 				};
-
-				console.log(options);
 
 				tb.loadObj(options, (_model) => {
 					this.model = _model;
