@@ -690,7 +690,6 @@ map.on('style.load', async () => {
 	map.on('click', (evt) => {
 		console.log("Position: ", evt.lngLat);
 	});
-
 });
 
 

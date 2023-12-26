@@ -81,7 +81,7 @@ class MarathonDropdownSelection {
 		this.snowButtonCallbackFn = snowButtonCallbackFn;
 		this.dataSources = {};
 		this.isItSnowingIn = {};
-		this.selected = '';
+		this.selected = 'nyc-marathon';
 	}
 
 	onAdd(map) {
