@@ -6,7 +6,23 @@ const SNOW_BUFFER = 0.1
 let animationStopped = false;
 let altitudeValue;
 let pitchValue;
-let letItSnow = true;
-let bringSnow = {}
+
+class AnimationManager {
+	constructor() {
+		this.animationInterrupted = false;
+	}
+
+	interruptAnimation() {
+		this.animationInterrupted = true
+	}
+
+	enableAnimation() {
+		this.animationInterrupted = false;
+	}
+
+	getAnimationEnabledState() {
+		return this.animationInterrupted;
+	}
+}
 
 

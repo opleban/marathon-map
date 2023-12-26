@@ -10,6 +10,8 @@ const map = new mapboxgl.Map({
 
 window.tb = new Threebox(map, map.getCanvas().getContext('webgl'), { defaultLights: true });
 
+const animationManager = new AnimationManager();
+
 //Load 3D Model
 // const animatedModel = new ThreeBoxModel({modelPath:'./models/elk_wip.glb', animated: true, initialRotation: { x: 90, y: -90, z: 0 }, scale: 10, zOffset:-20, animationSpeed: 1});
 // const animatedModel = new ThreeBoxModel({modelPath:'./models/runner.glb', animated: true, initialRotation: { x: 90, y: -90, z: 0 }, scale: 40, zOffset:0, animationSpeed: 1});
@@ -25,12 +27,7 @@ const animatedModel = new ThreeBoxModel({modelPath:'./models/santa_claus.glb', a
 
 // Snow Commands
 const snowButtonCallbackFn = (_map, routeData, routeId) => {
-	// const minLat = 46.5;
-	// const maxLat = 47.25;
-	// const minLon = -122;
-	// const maxLon = -121.5;
 
-	// console.log(routeData);
 	const [minLon, minLat, maxLon, maxLat] = turf.bbox(routeData);
 
 	const points = createPoints({
@@ -131,17 +128,6 @@ const snowButtonCallbackFn = (_map, routeData, routeId) => {
 
 }
 
-const interruptAnimation = () => {
-	animationStopped = true
-}
-
-const enableAnimation = () => {
-	animationStopped = false
-}
-
-const getAnimationEnabledState = () => {
-	return animationStopped;
-}
 
 const showFullRoute = (_map, routeGeoJSON) => {
 	const bounds = turf.bbox(routeGeoJSON);
@@ -161,16 +147,16 @@ const showFullRoute = (_map, routeGeoJSON) => {
 
 
 const dropDownCallbackFn = ({data, map}) => {
-	interruptAnimation();
+	animationManager.interruptAnimation();
 	showFullRoute(map, data).then(() => {
-		enableAnimation();
+		animationManager.enableAnimation();
 		animatedModel.setCoordsWithZOffset(data.features[0].geometry.coordinates[0])
 	});
 }
 
-const marathonDropDownList = new MarathonDropdownSelection({dropDownCallbackFn, snowButtonCallbackFn});
+const marathonRouteSelection = new MarathonRouteSelection({dropDownCallbackFn, snowButtonCallbackFn});
 map.addControl(new MarathonMapControl());
-map.addControl(marathonDropDownList);
+map.addControl(marathonRouteSelection);
 // map.addControl(new MarathonTopLeftButton(makeItSnow));
 const fetchGeoJsonData = async (url) => {
 	let response = await fetch(url);
@@ -226,7 +212,7 @@ const addRouteWithModel = (_map, _data, _sourceName, _prettyName, _model) => {
 	} 
 
 	addGeoJsonSourceStyleToMap();
-	marathonDropDownList.addOption({
+	marathonRouteSelection.addOption({
 		prettyName: _prettyName, 
 		value: _sourceName,
 		data: _data
@@ -299,7 +285,7 @@ const animatePathWithModel = async ({ _map, trackId, duration, path, startBearin
 
 
       // when the duration is complete, resolve the promise and stop iterating
-			if (animationPhase > 1 || getAnimationEnabledState()) {
+			if (animationPhase > 1 || animationManager.getAnimationEnabledState()) {
 				resolve();
 				return;
 			}
@@ -393,6 +379,7 @@ const flyInAndRotate = async ({
 
     // the animation frame will run as many times as necessary until the duration has been reached
 		const frame = async (time) => {
+
 			if (!start) {
 				start = time;
 			}
@@ -411,6 +398,14 @@ const flyInAndRotate = async ({
 			currentBearing = startBearing + (endBearing - startBearing) * d3.easeCubicOut(animationPhase)
 
 			currentPitch = startPitch + (endPitch - startPitch) * d3.easeCubicOut(animationPhase)
+
+			if (animationManager.getAnimationEnabledState()) {
+				resolve({
+					bearing: currentBearing,
+					altitude: currentAltitude,
+				})
+				return;
+			}
 
       // compute corrected camera ground position, so the start of the path is always in view
 			var correctedPosition = computeCameraPosition(
@@ -443,10 +438,8 @@ const flyInAndRotate = async ({
         // return so there are no further iterations of this frame
 				return;
 			}
-
 			await window.requestAnimationFrame(frame);
 		};
-
 		await window.requestAnimationFrame(frame);
 	});
 };
@@ -726,13 +719,6 @@ map.on('3dmodeladded', async (e) => {
 	addRouteWithModel(map, miamiMarathonData, 'miami-marathon', 'Miami Marathon', animatedModel);
 	addRouteWithModel(map, sanFranciscoMarathonData, 'san-francisco-marathon', 'SF Marathon', animatedModel);
 	addRouteWithModel(map, napaValleyMarathonData, 'napa-valley-marathon', 'Napa Valley Marathon', animatedModel);
-
-	bringSnow.ToNewYork = () => makeItSnow(map, nycData, 'nyc-marathon')
-	bringSnow.ToBerlin = () => makeItSnow(map, berlinData, 'berlin-marathon')
-	bringSnow.ToTokyo = () => makeItSnow(map, tokyoData, 'tokyo-marathon')
-	bringSnow.ToChicago = () => makeItSnow(map, chicagoData, 'chicago-marathon')
-	bringSnow.ToBoston = () => makeItSnow(map, bostonData, 'boston-marathon')
-	bringSnow.ToParis = () => makeItSnow(map, parisData, 'paris-marathon')
 
 });
 

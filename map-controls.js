@@ -75,7 +75,7 @@ class MarathonMapControl {
 	}
 }
 
-class MarathonDropdownSelection {
+class MarathonRouteSelection {
 	constructor({dropDownCallbackFn, snowButtonCallbackFn}) {
 		this.dropDownCallbackFn = dropDownCallbackFn;
 		this.snowButtonCallbackFn = snowButtonCallbackFn;
