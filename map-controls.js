@@ -108,20 +108,24 @@ class MarathonDropdownSelection {
 		this._select.addEventListener('change', (evt) => {
 			this.selected = evt.target.value;
 			this.dropDownCallbackFn({data: this.dataSources[this.selected], map: this._map});
+			if (!this.isItSnowingIn[this.selected]) {
+				this.snowButton.disabled = false;
+			}
 			
 		});
 
-		const snowButton = document.createElement('button');
-		snowButton.textContent = "Let it snow!";
-		snowButton.addEventListener('click', () => {
+		this.snowButton = document.createElement('button');
+		this.snowButton.textContent = "Let it snow!";
+		this.snowButton.addEventListener('click', () => {
 			if (this.selected && !this.isItSnowingIn[this.selected]) {
 				this.snowButtonCallbackFn(this._map, this.dataSources[this.selected], this.selected);
 				this.isItSnowingIn[this.selected] = true;
+				this.snowButton.disabled = true;
 			}
 		});
 
 		this._container.appendChild(this._select);
-		this._container.appendChild(snowButton);
+		this._container.appendChild(this.snowButton);
 
 		return this._container;
 	}
