@@ -83,7 +83,6 @@ const snowButtonCallbackFn = (_map, routeData, routeId) => {
 			deltaTime = 0;
 		}
 		_then = now;
-		if (letItSnow) {
 		//update billboard center points (6 * 3)
 			for (let i=0; i<numElements; i++) {
 				points.points[i].propagate(deltaTime);
@@ -114,7 +113,6 @@ const snowButtonCallbackFn = (_map, routeData, routeId) => {
 			for (let i=0; i<numElements; i++) {
 				points.points[i].resetY();
 			}
-		}
 
 		//request another frame
 		frame = requestAnimationFrame(idraw);
@@ -127,7 +125,6 @@ const snowButtonCallbackFn = (_map, routeData, routeId) => {
 	idraw();
 
 }
-
 
 const showFullRoute = (_map, routeGeoJSON) => {
 	const bounds = turf.bbox(routeGeoJSON);
@@ -144,7 +141,6 @@ const showFullRoute = (_map, routeGeoJSON) => {
 		}, 100)
 	});
 }
-
 
 const dropDownCallbackFn = ({data, map}) => {
 	animationManager.interruptAnimation();
@@ -272,7 +268,6 @@ const computeCameraPosition = ( pitch, bearing, targetPosition, altitude, smooth
 const animatePathWithModel = async ({ _map, trackId, duration, path, startBearing, startAltitude, pitch, _model }) => {
 	return new Promise(async (resolve) => {
 
-
 		const pathDistance = turf.lineDistance(path);
 		let startTime;
 
@@ -322,7 +317,7 @@ const animatePathWithModel = async ({ _map, trackId, duration, path, startBearin
 				lngLat,
 				_altitudeValue,
         		true // smooth
-        		);
+        	);
 
       // set the pitch and bearing of the camera
 			const camera = _map.getFreeCameraOptions();
@@ -549,7 +544,6 @@ const playAnimations = async (_map, trackGeojson, _defaultModelRotationValues) =
 	})
 };
 
-
 const addSantaSleighModel = (_map, initialLocation) => {
 	map.addSource('mysource', {
 		type: 'geojson',
@@ -606,7 +600,6 @@ const addDuckModel = (_map, initialLocation) => {
 	});
 
 	return defaultModelRotationValues;
-
 }
 
 const addCustom3DModelLayer = (_map, modelPath, initialRotation, scale) => {
@@ -651,20 +644,14 @@ const getInitialBearing = (_data) => {
 	const alongPathPoint = turf.along(_data.features[0], 0.005).geometry.coordinates;
 
 	const pathBearing = turf.bearing(initialPathPoint, alongPathPoint);
-	return pathBearing;
-	
+	return pathBearing;	
 }
-
-// import Stats from 'https://threejs.org/examples/jsm/libs/stats.module.js';
-// let stats;
 
 map.on('style.load', async () => {
 	map.setConfigProperty('basemap', 'lightPreset', 'dawn');
 	map.setConfigProperty('basemap', 'fog', [0.5,15] );
 
-	// addCustom3DModelLayer(map, './models/runner.glb', { x: 90, y: -90, z: 0 }, 40);
 	animatedModel.addModelLayerToMap(map);
-	// addCustom3DModelLayer(map, './models/elk_wip.glb', { x: 90, y: -90, z: 0 }, 10);
 
 	// map.addSource('mapbox-dem', {
 	// 	'type': 'raster-dem',
@@ -675,16 +662,12 @@ map.on('style.load', async () => {
 
 	// map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1 })
 
-	// const initialBearing = getInitialBearing(nycData);
-	// const azimuthAngle = turf.bearingToAzimuth(initialBearing);
-
 	map.setFog({'range': [0,20]})
 
 	map.on('click', (evt) => {
 		console.log("Position: ", evt.lngLat);
 	});
 });
-
 
 map.on('3dmodeladded', async (e) => {
 
