@@ -24,7 +24,7 @@ const animatedModel = new ThreeBoxModel({modelPath:'./models/santa_claus.glb', a
 
 
 // Snow Commands
-const makeItSnow = (_map, routeData, routeId) => {
+const snowButtonCallbackFn = (_map, routeData, routeId) => {
 	// const minLat = 46.5;
 	// const maxLat = 47.25;
 	// const minLon = -122;
@@ -131,9 +131,6 @@ const makeItSnow = (_map, routeData, routeId) => {
 
 }
 
-
-
-
 const interruptAnimation = () => {
 	animationStopped = true
 }
@@ -163,7 +160,7 @@ const showFullRoute = (_map, routeGeoJSON) => {
 }
 
 
-const dropdownSelectCallbackFn = ({data, map}) => {
+const dropDownCallbackFn = ({data, map}) => {
 	interruptAnimation();
 	showFullRoute(map, data).then(() => {
 		enableAnimation();
@@ -171,10 +168,10 @@ const dropdownSelectCallbackFn = ({data, map}) => {
 	});
 }
 
-const marathonDropDownList = new MarathonDropdownSelection({callbackFn: dropdownSelectCallbackFn});
+const marathonDropDownList = new MarathonDropdownSelection({dropDownCallbackFn, snowButtonCallbackFn});
 map.addControl(new MarathonMapControl());
 map.addControl(marathonDropDownList);
-
+// map.addControl(new MarathonTopLeftButton(makeItSnow));
 const fetchGeoJsonData = async (url) => {
 	let response = await fetch(url);
 
@@ -186,23 +183,6 @@ const fetchGeoJsonData = async (url) => {
 }
 
 const addRouteWithModel = (_map, _data, _sourceName, _prettyName, _model) => {
-	const addButton = (btnText, btnId) => {
-		const newButton = document.createElement('button');
-		newButton.textContent = btnText;
-		newButton.id = btnId;
-
-		newButton.addEventListener("click", _evt => {
-			interruptAnimation();
-			showFullRoute(_map, _data).then(() => {
-				enableAnimation();
-				_model.setCoordsWithZOffset(_data.features[0].geometry.coordinates[0])
-			});
-			// 
-		});
-
-		document.body.appendChild(newButton);
-	}
-
 	const addPlayMarker = (markerCoord, markerName) => {
 
 		const _marker = new mapboxgl.Marker({
@@ -246,7 +226,6 @@ const addRouteWithModel = (_map, _data, _sourceName, _prettyName, _model) => {
 	} 
 
 	addGeoJsonSourceStyleToMap();
-	addButton(_prettyName, _sourceName);
 	marathonDropDownList.addOption({
 		prettyName: _prettyName, 
 		value: _sourceName,

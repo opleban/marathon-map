@@ -76,9 +76,12 @@ class MarathonMapControl {
 }
 
 class MarathonDropdownSelection {
-	constructor({callbackFn}) {
-		this.callbackFn = callbackFn;
+	constructor({dropDownCallbackFn, snowButtonCallbackFn}) {
+		this.dropDownCallbackFn = dropDownCallbackFn;
+		this.snowButtonCallbackFn = snowButtonCallbackFn;
 		this.dataSources = {};
+		this.isItSnowingIn = {};
+		this.selected = '';
 	}
 
 	onAdd(map) {
@@ -86,12 +89,14 @@ class MarathonDropdownSelection {
 		this._container = document.createElement('div');
 		this._container.className = 'mapboxgl-dropdown-ctrl mapboxgl-ctrl';
 		this._select = document.createElement('select');
+
 		const defaultOption = document.createElement('option');
 		defaultOption.value="none";
 		defaultOption.selected = true;
 		defaultOption.hidden = true
 		defaultOption.disabled = true;
 		defaultOption.textContent = "Select a marathon route"
+
 		const emptyOption = document.createElement('option');
 		emptyOption.value="none";
 		emptyOption.disabled = true;
@@ -99,12 +104,24 @@ class MarathonDropdownSelection {
 		this._select.appendChild(emptyOption);
 		this._select.id = "marathons";
 		this._select.name ="marathons";
+
 		this._select.addEventListener('change', (evt) => {
-			this.callbackFn({data: this.dataSources[evt.target.value], map: this._map});
+			this.selected = evt.target.value;
+			this.dropDownCallbackFn({data: this.dataSources[this.selected], map: this._map});
 			
-		})
+		});
+
+		const snowButton = document.createElement('button');
+		snowButton.textContent = "Let it snow!";
+		snowButton.addEventListener('click', () => {
+			if (this.selected && !this.isItSnowingIn[this.selected]) {
+				this.snowButtonCallbackFn(this._map, this.dataSources[this.selected], this.selected);
+				this.isItSnowingIn[this.selected] = true;
+			}
+		});
 
 		this._container.appendChild(this._select);
+		this._container.appendChild(snowButton);
 
 		return this._container;
 	}
