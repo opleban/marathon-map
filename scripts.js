@@ -2,7 +2,7 @@
 const map = new mapboxgl.Map({
 	container: 'map', // container ID
 	style: 'mapbox://styles/opleban/clpvf0cdm00w601qu2pyq6shp', // style URL
-	center: [-74.0578574090154, 40.60240962462245], // starting position [lng, lat]
+	center: [-73.97968965449549, 40.661204960237825], // starting position [lng, lat]
 	zoom: 17, // starting zoom
 	pitch: 50,
 	bearing: 0.4
@@ -21,8 +21,9 @@ const animationManager = new AnimationManager();
 // const animatedModel = new ThreeBoxModel({modelPath:'./models/santa_sleigh.glb', animated: false, initialRotation: { x: 90, y: 180, z: 0 }, scale: 2, zOffset:0, animationSpeed: 0});
 // const animatedModel = new ThreeBoxModel({modelPath:'./models/pig_sleigh.glb', animated: true, initialRotation: { x: 90, y: 180, z: 0 }, scale: 1, zOffset:0, animationSpeed: 1});
 // const animatedModel = new ThreeBoxModel({modelPath:'./models/tron_bike.glb', animated: true, initialRotation: { x: 90, y: 90, z: 0 }, scale: 20, zOffset:0, animationSpeed: 1});
-const animatedModel = new ThreeBoxModel({modelPath:'./models/santa_claus.glb', animated: false, initialRotation: { x: 90, y: 0, z: 0 }, scale: 20, zOffset:20, animationSpeed: 1});
+// const animatedModel = new ThreeBoxModel({modelPath:'./models/santa_claus.glb', animated: false, initialRotation: { x: 90, y: 0, z: 0 }, scale: 20, zOffset:20, animationSpeed: 1});
 // const animatedModel = new ThreeBoxModel({modelPath:'./models/donkey_kong_model.glb', animated: true, initialRotation: { x: 90, y: 90, z: 0 }, scale: 20, zOffset:10, animationSpeed: 1});
+const animatedModel = new ThreeBoxModel({modelPath:'./models/tom_cat_dancing_running_man.glb', animated: true, initialRotation: { x: 90, y: -90, z: 0 }, scale: 20, zOffset:0, animationSpeed: 1});
 
 
 // Snow Commands
@@ -573,6 +574,35 @@ const addSantaSleighModel = (_map, initialLocation) => {
 	return defaultModelRotationValues;
 }
 
+const addTomCatModel = (_map, initialLocation) => {
+	map.addSource('mysource', {
+		type: 'geojson',
+		data: generateUpdatedElephantData(initialLocation)
+	});
+
+    // I see that a network request is made to this URL.
+	map.addModel('model', '/models/tom_cat_dancing_running_man.glb');
+
+	const defaultModelRotationValues = [0,0,0]
+
+    // No models show up on the map. No errors are thrown. What's missing?
+	map.addLayer({
+		'id': 'modellayer',
+		'type': 'model',
+		'source': 'mysource',
+		'layout': {
+			'model-id': 'model'
+		},
+		'paint': {
+			'model-scale': [ 2.5, 2.5, 2.5],
+			'model-type': 'location-indicator',
+			'model-rotation': defaultModelRotationValues
+		}
+	});
+
+	return defaultModelRotationValues;
+}
+
 const addDuckModel = (_map, initialLocation) => {
 	map.addSource('mysource', {
 		type: 'geojson',
@@ -633,7 +663,7 @@ const addCustom3DModelLayer = (_map, modelPath, initialRotation, scale) => {
 
 const add3DModel = (_map, initialLocation) => {
 	// const defaultModelRotationValues = addDuckModel(_map, initialLocation);
-	const defaultModelRotationValues = addSantaSleighModel(_map, initialLocation);
+	const defaultModelRotationValues = addTomCatModel(_map, initialLocation);
 	// const defaultModelRotationValues = addElkModel(_map, initialLocation);
 
 	return defaultModelRotationValues;
@@ -672,6 +702,7 @@ map.on('style.load', async () => {
 map.on('3dmodeladded', async (e) => {
 
 	// Load Marathon Routes
+	let brightonData = await fetchGeoJsonData('./routes_geojson/BrightonRun.geojson')
 	let londonData = await fetchGeoJsonData('./routes_geojson/LondonMarathon.geojson')
 	let bostonData = await fetchGeoJsonData('./routes_geojson/BostonMarathon.geojson')
 	let chicagoData = await fetchGeoJsonData('./routes_geojson/ChicagoMarathon.geojson')
@@ -684,11 +715,15 @@ map.on('3dmodeladded', async (e) => {
 	let sanFranciscoMarathonData = await fetchGeoJsonData('./routes_geojson/SFMarathon.geojson')
 	let napaValleyMarathonData = await fetchGeoJsonData('./routes_geojson/NapaValleyMarathon.geojson')
 
-	const initialBearing = getInitialBearing(nycData);
+	// const initialBearing = getInitialBearing(nycData);
 
-	const initialNYCCoordinates = nycData.features[0].geometry.coordinates[0];
+	// const initialNYCCoordinates = nycData.features[0].geometry.coordinates[0];
 
-	animatedModel.setCoordsWithZOffset(initialNYCCoordinates);
+	const initialBearing = getInitialBearing(brightonData);
+
+	const initialCoordinates = brightonData.features[0].geometry.coordinates[0];
+
+	animatedModel.setCoordsWithZOffset(initialCoordinates);
 	animatedModel.model.setRotation(90 - initialBearing);
 
 	addRouteWithModel(map, londonData, 'london-marathon','TCS London Marathon', animatedModel);
@@ -702,6 +737,7 @@ map.on('3dmodeladded', async (e) => {
 	addRouteWithModel(map, miamiMarathonData, 'miami-marathon', 'Miami Marathon', animatedModel);
 	addRouteWithModel(map, sanFranciscoMarathonData, 'san-francisco-marathon', 'SF Marathon', animatedModel);
 	addRouteWithModel(map, napaValleyMarathonData, 'napa-valley-marathon', 'Napa Valley Marathon', animatedModel);
+	addRouteWithModel(map, brightonData, 'brighton-beach-run', 'Bright Beach Run', animatedModel);
 
 });
 
