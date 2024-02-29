@@ -23,7 +23,9 @@ const animationManager = new AnimationManager();
 // const animatedModel = new ThreeBoxModel({modelPath:'./models/tron_bike.glb', animated: true, initialRotation: { x: 90, y: 90, z: 0 }, scale: 20, zOffset:0, animationSpeed: 1});
 // const animatedModel = new ThreeBoxModel({modelPath:'./models/santa_claus.glb', animated: false, initialRotation: { x: 90, y: 0, z: 0 }, scale: 20, zOffset:20, animationSpeed: 1});
 // const animatedModel = new ThreeBoxModel({modelPath:'./models/donkey_kong_model.glb', animated: true, initialRotation: { x: 90, y: 90, z: 0 }, scale: 20, zOffset:10, animationSpeed: 1});
-const animatedModel = new ThreeBoxModel({modelPath:'./models/tom_cat_dancing_running_man.glb', animated: true, initialRotation: { x: 90, y: -90, z: 0 }, scale: 20, zOffset:0, animationSpeed: 1});
+// const animatedModel = new ThreeBoxModel({modelPath:'./models/tom_cat_dancing_running_man.glb', animated: true, initialRotation: { x: 90, y: -90, z: 0 }, scale: 20, zOffset:0, animationSpeed: 1});
+// const animatedModel = new ThreeBoxModel({modelPath:'./models/pikachu.glb', animated: true, initialRotation: { x: 90, y: -90, z: 0 }, scale: 5, zOffset:0, animationSpeed: 1});
+const animatedModel = new ThreeBoxModel({modelPath:'./models/samba_dancing_pikachu.glb', animated: true, initialRotation: { x: 90, y: -90, z: 0 }, scale: 10, zOffset:0, animationSpeed: 1});
 
 
 // Snow Commands
