@@ -2,7 +2,7 @@
 const map = new mapboxgl.Map({
 	container: 'map', // container ID
 	style: 'mapbox://styles/opleban/clpvf0cdm00w601qu2pyq6shp', // style URL
-	center: [-73.97968965449549, 40.661204960237825], // starting position [lng, lat]
+	center: [-74.05776, 40.602450000000005], // starting position [lng, lat]
 	zoom: 17, // starting zoom
 	pitch: 50,
 	bearing: 0.4
@@ -25,7 +25,8 @@ const animationManager = new AnimationManager();
 // const animatedModel = new ThreeBoxModel({modelPath:'./models/donkey_kong_model.glb', animated: true, initialRotation: { x: 90, y: 90, z: 0 }, scale: 20, zOffset:10, animationSpeed: 1});
 // const animatedModel = new ThreeBoxModel({modelPath:'./models/tom_cat_dancing_running_man.glb', animated: true, initialRotation: { x: 90, y: -90, z: 0 }, scale: 20, zOffset:0, animationSpeed: 1});
 // const animatedModel = new ThreeBoxModel({modelPath:'./models/pikachu.glb', animated: true, initialRotation: { x: 90, y: -90, z: 0 }, scale: 5, zOffset:0, animationSpeed: 1});
-const animatedModel = new ThreeBoxModel({modelPath:'./models/samba_dancing_pikachu.glb', animated: true, initialRotation: { x: 90, y: -90, z: 0 }, scale: 10, zOffset:0, animationSpeed: 1});
+// const animatedModel = new ThreeBoxModel({modelPath:'./models/samba_dancing_pikachu.glb', animated: true, initialRotation: { x: 90, y: -90, z: 0 }, scale: 10, zOffset:0, animationSpeed: 1});
+const animatedModel = new ThreeBoxModel({modelPath:'./models/runner_animated.glb', animated: true, initialRotation: { x: 90, y: -90, z: 0 }, scale: 25, zOffset:0, animationSpeed: 1});
 
 
 // Snow Commands
@@ -161,9 +162,7 @@ const fetchGeoJsonData = async (url) => {
 	let response = await fetch(url);
 
 	return await (
-		response.headers.get('content-type').includes('json')
-		? response.json() // this will parse your JSON if the proper content-type header is set!
-		: response.text()
+		response.json() // this will parse your JSON if the proper content-type header is set!
 		)
 }
 
@@ -454,6 +453,7 @@ const playAnimationsWithModel = async (_map, trackGeojson, trackId, _model) => {
 		};
 
 	// Get initial bearing based marathon route
+
 		const initialPathPoint = turf.along(trackGeojson.features[0], 0).geometry.coordinates;
 		const alongPathPoint = turf.along(trackGeojson.features[0], BEARING_PARAMETER).geometry.coordinates;
 
@@ -671,7 +671,9 @@ const add3DModel = (_map, initialLocation) => {
 	return defaultModelRotationValues;
 }
 
+var test_data;
 const getInitialBearing = (_data) => {
+	test_data = _data;
 	const initialPathPoint = turf.along(_data.features[0], 0).geometry.coordinates;
 	const alongPathPoint = turf.along(_data.features[0], 0.005).geometry.coordinates;
 
@@ -721,9 +723,10 @@ map.on('3dmodeladded', async (e) => {
 
 	// const initialNYCCoordinates = nycData.features[0].geometry.coordinates[0];
 
-	const initialBearing = getInitialBearing(brightonData);
+	const initialBearing = getInitialBearing(nycData);
 
-	const initialCoordinates = brightonData.features[0].geometry.coordinates[0];
+	const initialCoordinates = nycData.features[0].geometry.coordinates[0];
+	console.log(initialCoordinates)
 
 	animatedModel.setCoordsWithZOffset(initialCoordinates);
 	animatedModel.model.setRotation(90 - initialBearing);
