@@ -713,7 +713,8 @@ map.on('3dmodeladded', async (e) => {
 	let tokyoData = await fetchGeoJsonData('./routes_geojson/TokyoMarathon.geojson')
 	let berlinData = await fetchGeoJsonData('./routes_geojson/BerlinMarathon.geojson')
 	let nycData = await fetchGeoJsonData('./routes_geojson/NYCMarathon.geojson')
-	let parisData = await fetchGeoJsonData('./routes_geojson/ParisOlympicsMarathon.geojson')
+	let parisOlympicsData = await fetchGeoJsonData('./routes_geojson/ParisOlympicsMarathon.geojson')
+	let parisMarathonData = await fetchGeoJsonData('./routes_geojson/ParisMarathon.geojson')
 	let lasVegasData = await fetchGeoJsonData('./routes_geojson/LasVegasMarathon.geojson')
 	let miamiMarathonData = await fetchGeoJsonData('./routes_geojson/MiamiMarathon.geojson')
 	let sanFranciscoMarathonData = await fetchGeoJsonData('./routes_geojson/SFMarathon.geojson')
@@ -737,7 +738,8 @@ map.on('3dmodeladded', async (e) => {
 	addRouteWithModel(map, tokyoData, 'tokyo-marathon', 'Tokyo Marathon', animatedModel);
 	addRouteWithModel(map, berlinData, 'berlin-marathon', 'BMW Berlin Marathon', animatedModel);
 	addRouteWithModel(map, nycData, 'nyc-marathon', 'TCS NYC Marathon', animatedModel);
-	addRouteWithModel(map, parisData, 'paris-marathon', 'Paris Olympics Marathon', animatedModel);
+	addRouteWithModel(map, parisOlympicsData, 'paris-olympics-marathon', 'Paris Olympics Marathon', animatedModel);
+	addRouteWithModel(map, parisMarathonData, 'paris-schneider-marathon', 'Schneider Electric Marathon de Paris', animatedModel);
 	addRouteWithModel(map, lasVegasData, 'las-vegas-marathon', 'Las Vegas Rock n Roll Marathon', animatedModel);
 	addRouteWithModel(map, miamiMarathonData, 'miami-marathon', 'Miami Marathon', animatedModel);
 	addRouteWithModel(map, sanFranciscoMarathonData, 'san-francisco-marathon', 'SF Marathon', animatedModel);
