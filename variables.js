@@ -25,4 +25,7 @@ class AnimationManager {
 	}
 }
 
+const UNSELECTED_ROUTE_LINE_COLOR = "rgba(46,176,255,1)";
+const SELECTED_ROUTE_LINE_COLOR = "rgba(60, 179, 113, 1)";
+
 

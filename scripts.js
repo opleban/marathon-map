@@ -146,8 +146,21 @@ const showFullRoute = (_map, routeGeoJSON) => {
 	});
 }
 
-const dropDownCallbackFn = ({data, map}) => {
+const dropDownCallbackFn = ({data, map, selected, prevSelected}) => {
 	animationManager.interruptAnimation();
+	// PAINT PREVIOUS ROUTE LINE WIHT UNSELECTED
+	map.setPaintProperty(
+		prevSelected,
+		"line-color",
+		UNSELECTED_ROUTE_LINE_COLOR
+	)
+	// PAINT ROUTE LINE WITH SELECTED COLOR
+	map.moveLayer(selected);
+	map.setPaintProperty(
+		selected,
+		"line-color",
+		SELECTED_ROUTE_LINE_COLOR
+	)
 	showFullRoute(map, data).then(() => {
 		animationManager.enableAnimation();
 		animatedModel.setCoordsWithZOffset(data.features[0].geometry.coordinates[0])
@@ -166,6 +179,11 @@ const fetchGeoJsonData = async (url) => {
 		)
 }
 
+const popup = new mapboxgl.Popup({
+	closeButton: false,
+	closeOnClick: false
+});
+
 const addRouteWithModel = (_map, _data, _sourceName, _prettyName, _model) => {
 	const addPlayMarker = (markerCoord, markerName) => {
 
@@ -177,7 +195,26 @@ const addRouteWithModel = (_map, _data, _sourceName, _prettyName, _model) => {
 
 		// Add click handler
 		_marker.getElement().addEventListener('click', () => {
+			console.log("hover: ", _prettyName);
 			playAnimationsWithModel(_map, _data, _sourceName, _model);
+		});
+		_marker.getElement().addEventListener('mouseenter', (e) => {
+			console.log("hover: ", _prettyName);
+			_map.getCanvas().style.cursor = 'pointer';
+			console.log(e);
+
+	        const coordinates = _marker.getLngLat();
+
+	        while (Math.abs(_marker.getLngLat().lng - coordinates[0]) > 180) {
+	          coordinates[0] += _marker.getLngLat().lng > coordinates[0] ? 360 : -360;
+	        }
+
+	        popup.setLngLat(coordinates).setHTML(_prettyName).addTo(_map);
+		});
+
+		_marker.getElement().addEventListener('mouseleave', (e) => {
+			_map.getCanvas().style.cursor = '';
+        	popup.remove();
 		});
 	}
 
@@ -196,7 +233,7 @@ const addRouteWithModel = (_map, _data, _sourceName, _prettyName, _model) => {
 			'slot': 'middle',
 			'source': _sourceName,
 			'paint': {
-				"line-color": "rgba(60, 179, 113, 1)",
+				"line-color": UNSELECTED_ROUTE_LINE_COLOR,
 				"line-width": 6,
 				"line-opacity": 1
 			},
@@ -306,7 +343,7 @@ const animatePathWithModel = async ({ _map, trackId, duration, path, startBearin
 					["line-progress"],
 					"red",
 					animationPhase,
-					"rgba(60, 179, 113, 1)",
+					SELECTED_ROUTE_LINE_COLOR
 					]
 				);
 
@@ -547,93 +584,6 @@ const playAnimations = async (_map, trackGeojson, _defaultModelRotationValues) =
 	})
 };
 
-const addSantaSleighModel = (_map, initialLocation) => {
-	map.addSource('mysource', {
-		type: 'geojson',
-		data: generateUpdatedElephantData(initialLocation)
-	});
-
-    // I see that a network request is made to this URL.
-	map.addModel('model', '/models/santa_sleigh.glb');
-
-	const defaultModelRotationValues = [0,0,0]
-
-    // No models show up on the map. No errors are thrown. What's missing?
-	map.addLayer({
-		'id': 'modellayer',
-		'type': 'model',
-		'source': 'mysource',
-		'layout': {
-			'model-id': 'model'
-		},
-		'paint': {
-			'model-scale': [ 2.5, 2.5, 2.5],
-			'model-type': 'location-indicator',
-			'model-rotation': defaultModelRotationValues
-		}
-	});
-
-	return defaultModelRotationValues;
-}
-
-const addTomCatModel = (_map, initialLocation) => {
-	map.addSource('mysource', {
-		type: 'geojson',
-		data: generateUpdatedElephantData(initialLocation)
-	});
-
-    // I see that a network request is made to this URL.
-	map.addModel('model', '/models/tom_cat_dancing_running_man.glb');
-
-	const defaultModelRotationValues = [0,0,0]
-
-    // No models show up on the map. No errors are thrown. What's missing?
-	map.addLayer({
-		'id': 'modellayer',
-		'type': 'model',
-		'source': 'mysource',
-		'layout': {
-			'model-id': 'model'
-		},
-		'paint': {
-			'model-scale': [ 2.5, 2.5, 2.5],
-			'model-type': 'location-indicator',
-			'model-rotation': defaultModelRotationValues
-		}
-	});
-
-	return defaultModelRotationValues;
-}
-
-const addDuckModel = (_map, initialLocation) => {
-	map.addSource('mysource', {
-		type: 'geojson',
-		data: generateUpdatedElephantData(initialLocation)
-	});
-
-    // I see that a network request is made to this URL.
-	map.addModel('model', '/models/Duck.glb');
-
-
-    // No models show up on the map. No errors are thrown. What's missing?
-	const defaultModelRotationValues = [0,0,0];
-	map.addLayer({
-		'id': 'modellayer',
-		'type': 'model',
-		'source': 'mysource',
-		'layout': {
-			'model-id': 'model'
-		},
-		'paint': {
-			'model-scale': [15, 15, 15],
-			'model-type': 'location-indicator',
-			'model-rotation':  defaultModelRotationValues
-		}
-	});
-
-	return defaultModelRotationValues;
-}
-
 const addCustom3DModelLayer = (_map, modelPath, initialRotation, scale) => {
 	map.addLayer({
 		id: 'custom-threebox-model',
@@ -661,14 +611,6 @@ const addCustom3DModelLayer = (_map, modelPath, initialRotation, scale) => {
 			tb.update();
 		}
 	});
-}
-
-const add3DModel = (_map, initialLocation) => {
-	// const defaultModelRotationValues = addDuckModel(_map, initialLocation);
-	const defaultModelRotationValues = addTomCatModel(_map, initialLocation);
-	// const defaultModelRotationValues = addElkModel(_map, initialLocation);
-
-	return defaultModelRotationValues;
 }
 
 var test_data;

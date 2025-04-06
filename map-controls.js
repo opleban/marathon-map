@@ -13,10 +13,7 @@ class MarathonMapControl {
 		this._tiltUpButton.textContent = '↑';
 		this._container.appendChild(this._tiltUpButton);
 		this._tiltUpButton.addEventListener('click', () => {
-			console.log("tilt up");
 			pitchValue = this._map.getPitch() + 5;
-			console.log("altitude: ", altitudeValue);
-			console.log("pitch: ", pitchValue);
 		});
 
 		const brOne = document.createElement('br');
@@ -27,10 +24,7 @@ class MarathonMapControl {
 		this._zoomInbutton.textContent = '+';
 		this._container.appendChild(this._zoomInbutton);
 		this._zoomInbutton.addEventListener('click', () => {
-			console.log("zoom in");
 			altitudeValue = this._map.getFreeCameraOptions()._position.toAltitude() - 50;
-			console.log("altitude: ", altitudeValue);
-			console.log("pitch: ", pitchValue);
 		});
 
 		const midFiller = document.createElement('span');
@@ -42,10 +36,7 @@ class MarathonMapControl {
 		this._zoomOutbutton.textContent = '-';
 		this._container.appendChild(this._zoomOutbutton);
 		this._zoomOutbutton.addEventListener('click', () => {
-			console.log("zoom out");
 			altitudeValue = this._map.getFreeCameraOptions()._position.toAltitude() + 50;
-			console.log("altitude: ", altitudeValue);
-			console.log("pitch: ", pitchValue);
 		});
 
 		const brTwo = document.createElement('br');
@@ -60,10 +51,7 @@ class MarathonMapControl {
 		this._tiltDownButton.textContent = '↓';
 		this._container.appendChild(this._tiltDownButton);
 		this._tiltDownButton.addEventListener('click', () => {
-			console.log("tilt down");
 			pitchValue = this._map.getPitch() - 10;
-			console.log("altitude: ", altitudeValue);
-			console.log("pitch: ", pitchValue);
 		});
 
 		return this._container;
@@ -106,12 +94,12 @@ class MarathonRouteSelection {
 		this._select.name ="marathons";
 
 		this._select.addEventListener('change', (evt) => {
+			this.prevSelected = this.selected;
 			this.selected = evt.target.value;
-			this.dropDownCallbackFn({data: this.dataSources[this.selected], map: this._map});
+			this.dropDownCallbackFn({data: this.dataSources[this.selected], map: this._map, selected: this.selected, prevSelected: this.prevSelected});
 			if (!this.isItSnowingIn[this.selected]) {
 				this.snowButton.disabled = false;
 			}
-			
 		});
 
 		this.snowButton = document.createElement('button');
