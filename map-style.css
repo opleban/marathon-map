@@ -20,3 +20,7 @@
 		height: 85vh;
 	}
 }
+
+.mapboxgl-marker {
+	cursor: pointer;
+}

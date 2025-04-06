@@ -179,42 +179,36 @@ const fetchGeoJsonData = async (url) => {
 		)
 }
 
-const popup = new mapboxgl.Popup({
-	closeButton: false,
-	closeOnClick: false
-});
-
 const addRouteWithModel = (_map, _data, _sourceName, _prettyName, _model) => {
 	const addPlayMarker = (markerCoord, markerName) => {
+
+		const popup = new mapboxgl.Popup({
+			offset: 30,
+			closeButton: false,
+			closeOnClick: false
+		}).setText(
+			_prettyName
+		  );
 
 		const _marker = new mapboxgl.Marker({
 			color: "#FFFFFF"
 		})
 		.setLngLat(markerCoord)
+		.setPopup(popup)
 		.addTo(_map);
 
 		// Add click handler
 		_marker.getElement().addEventListener('click', () => {
-			console.log("hover: ", _prettyName);
 			playAnimationsWithModel(_map, _data, _sourceName, _model);
 		});
 		_marker.getElement().addEventListener('mouseenter', (e) => {
 			console.log("hover: ", _prettyName);
-			_map.getCanvas().style.cursor = 'pointer';
-			console.log(e);
-
-	        const coordinates = _marker.getLngLat();
-
-	        while (Math.abs(_marker.getLngLat().lng - coordinates[0]) > 180) {
-	          coordinates[0] += _marker.getLngLat().lng > coordinates[0] ? 360 : -360;
-	        }
-
-	        popup.setLngLat(coordinates).setHTML(_prettyName).addTo(_map);
+			_marker.togglePopup();
 		});
 
 		_marker.getElement().addEventListener('mouseleave', (e) => {
-			_map.getCanvas().style.cursor = '';
-        	popup.remove();
+			// _map.getCanvas().style.cursor = '';
+        	_marker.togglePopup();
 		});
 	}
 
